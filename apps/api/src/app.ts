@@ -1,0 +1,48 @@
+import 'dotenv/config'
+import express from 'express'
+import cors from 'cors'
+import helmet from 'helmet'
+import morgan from 'morgan'
+import http from 'http'
+import { WebSocketServer } from 'ws'
+import { errorHandler } from './middleware/error.middleware'
+import { authRouter } from './modules/users/auth.controller'
+import { ordersRouter } from './modules/orders/order.controller'
+import { trackingRouter } from './modules/tracking/tracking.controller'
+import { payoutsRouter } from './modules/payouts/payouts.controller'
+import { couriersRouter } from './modules/couriers/courier.controller'
+import { organizationsRouter } from './modules/organizations/organization.controller'
+import { wsManager } from './modules/ws/ws.manager'
+import { prisma } from './infrastructure/db/prisma'
+
+const app = express()
+
+app.use(helmet())
+app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*', credentials: true }))
+app.use(express.json())
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
+
+app.use('/api/auth', authRouter)
+app.use('/api/orders', ordersRouter)
+app.use('/api/tracking', trackingRouter)
+app.use('/api/payouts', payoutsRouter)
+app.use('/api/couriers', couriersRouter)
+app.use('/api/organizations', organizationsRouter)
+app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
+app.use(errorHandler)
+
+const server = http.createServer(app)
+const wss = new WebSocketServer({ server, path: '/ws' })
+wsManager.init(wss)
+
+const PORT = Number(process.env.PORT ?? 3000)
+server.listen(PORT, async () => {
+  await prisma.$connect()
+  console.log(`🚀 API  http://localhost:${PORT}`)
+  console.log(`🔌 WS   ws://localhost:${PORT}/ws`)
+})
+
+process.on('SIGTERM', async () => {
+  await prisma.$disconnect()
+  server.close(() => process.exit(0))
+})

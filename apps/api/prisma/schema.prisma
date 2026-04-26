@@ -1,0 +1,711 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+enum UserRole {
+  ADMIN        // платформенный администратор (наш)
+  ORG_ADMIN    // администратор организации-клиента
+  SUPERVISOR   // супервизор: мониторинг, алерты, ручное вмешательство
+  COURIER
+  CLIENT       // API-доступ компании-отправителя
+}
+
+enum CourierType {
+  STAFF
+  CONTRACTOR
+  FREELANCER
+}
+
+enum VehicleType {
+  FOOT
+  BIKE
+  MOTO
+  CAR
+}
+
+enum VerificationStatus {
+  UNSUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DispatchMode {
+  AUTO         // система назначает курьера автоматически
+  COMPETITIVE  // курьеры сами берут заказы из пула
+  MANUAL       // супервизор назначает вручную
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderStatus {
+  CREATED
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+  RETURNING
+}
+
+enum PayoutStatus {
+  PENDING
+  CALCULATED
+  APPROVED
+  PAID
+}
+
+enum AlertType {
+  COURIER_OFFLINE       // курьер не выходил на связь > N минут
+  ORDER_SLA_BREACH      // заказ не доставлен в срок
+  COURIER_STUCK         // курьер не двигается > N минут
+  DISPATCH_FAILED       // заказ не взят никем > N минут
+  GEOFENCE_VIOLATION    // курьер вышел за пределы зоны
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ContactChannel {
+  SMS
+  WHATSAPP
+  TELEGRAM
+  CALL
+}
+
+enum ContactDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum ContactStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  ANSWERED
+  NO_ANSWER
+}
+
+enum NotifyEvent {
+  ORDER_CREATED
+  COURIER_ASSIGNED
+  COURIER_NEARBY
+  DELIVERED
+  DELIVERY_FAILED
+  DELIVERY_RESCHEDULED
+}
+
+enum NotifyChannel {
+  PUSH
+  SMS
+  IN_APP
+}
+
+enum NotificationType {
+  ORDER_ASSIGNED
+  ORDER_STATUS_CHANGED
+  PAYOUT_READY
+  SYSTEM
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MULTI-TENANCY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Organization {
+  id                    String                 @id @default(uuid())
+  name                  String
+  slug                  String                 @unique
+  inn                   String?
+  logoUrl               String?                @map("logo_url")
+  isActive              Boolean                @default(true) @map("is_active")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  config                TenantConfig?
+  users                 User[]
+  couriers              Courier[]
+  clients               Client[]
+  orders                Order[]
+  zones                 Zone[]
+  warehouses            Warehouse[]
+  pickupPoints          PickupPoint[]
+  shifts                Shift[]
+  alerts                Alert[]
+  routes                Route[]
+  notificationTemplates NotificationTemplate[]
+
+  @@map("organizations")
+}
+
+model TenantConfig {
+  id                     String       @id @default(uuid())
+  organizationId         String       @unique @map("organization_id")
+  // Dispatch
+  dispatchMode           DispatchMode @default(AUTO) @map("dispatch_mode")
+  competitiveOfferTimeoutSec Int      @default(120) @map("competitive_offer_timeout_sec")
+  autoDispatchRadiusKm   Float        @default(5.0) @map("auto_dispatch_radius_km")
+  // Modules
+  shiftsEnabled          Boolean      @default(false) @map("shifts_enabled")
+  warehousesEnabled      Boolean      @default(false) @map("warehouses_enabled")
+  routeOptimizationEnabled Boolean    @default(false) @map("route_optimization_enabled")
+  encryptionEnabled      Boolean      @default(true) @map("encryption_enabled")
+  // SLA & alerts
+  slaMinutes             Int          @default(60) @map("sla_minutes")
+  stuckThresholdMin      Int          @default(15) @map("stuck_threshold_min")
+  offlineThresholdMin    Int          @default(10) @map("offline_threshold_min")
+  // GPS
+  gpsIntervalSec         Int          @default(30) @map("gps_interval_sec")
+  // Integrations (encrypted at app level)
+  twoGisApiKey           String?      @map("two_gis_api_key")
+  smsProvider            String?      @map("sms_provider")
+  smsApiKey              String?      @map("sms_api_key")
+  waApiKey               String?      @map("wa_api_key")
+  callProvider           String?      @map("call_provider")
+  callApiKey             String?      @map("call_api_key")
+  createdAt              DateTime     @default(now()) @map("created_at")
+  updatedAt              DateTime     @updatedAt @map("updated_at")
+  organization           Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("tenant_configs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// USERS & AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model User {
+  id             String         @id @default(uuid())
+  organizationId String?        @map("organization_id") // null для платформенного ADMIN
+  email          String         @unique
+  passwordHash   String         @map("password_hash")
+  name           String
+  phone          String         @unique
+  role           UserRole       @default(COURIER)
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  courier        Courier?
+  client         Client?
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COURIERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Courier {
+  id                  String             @id @default(uuid())
+  organizationId      String             @map("organization_id")
+  userId              String             @unique @map("user_id")
+  type                CourierType        @default(FREELANCER)
+  vehicleType         VehicleType        @default(FOOT)
+  vehiclePlate        String?            @map("vehicle_plate")
+  // Onboarding / verification (PII хранится в зашифрованном виде на уровне сервиса)
+  passportSeries      String?            @map("passport_series")
+  passportNumber      String?            @map("passport_number")
+  passportPhotoUrl    String?            @map("passport_photo_url")
+  innNumber           String?            @map("inn_number")
+  innPhotoUrl         String?            @map("inn_photo_url")
+  selfEmployed        Boolean            @default(false) @map("self_employed")
+  verificationStatus  VerificationStatus @default(UNSUBMITTED) @map("verification_status")
+  verificationComment String?            @map("verification_comment")
+  verifiedAt          DateTime?          @map("verified_at")
+  // Online state
+  isOnline            Boolean            @default(false) @map("is_online")
+  lastSeenAt          DateTime?          @map("last_seen_at")
+  currentLat          Float?             @map("current_lat")
+  currentLon          Float?             @map("current_lon")
+  // Stats
+  rating              Float              @default(5.0)
+  totalOrders         Int                @default(0) @map("total_orders")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  organization        Organization       @relation(fields: [organizationId], references: [id])
+  user                User               @relation(fields: [userId], references: [id])
+  orders              Order[]            @relation("CourierOrders")
+  locationHistory     LocationLog[]
+  payouts             Payout[]
+  shifts              Shift[]
+  dispatchOffers      DispatchOffer[]
+  routes              Route[]
+
+  @@index([organizationId])
+  @@index([verificationStatus])
+  @@map("couriers")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLIENTS (компании-отправители)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Client {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  userId         String       @unique @map("user_id")
+  companyName    String?      @map("company_name")
+  inn            String?
+  contractNo     String?      @map("contract_no")
+  webhookUrl     String?      @map("webhook_url")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+  orders         Order[]
+
+  @@index([organizationId])
+  @@map("clients")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ZONES, WAREHOUSES, PICKUP POINTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Zone {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  polygon        Json         // GeoJSON Polygon { type, coordinates }
+  basePrice      Float        @default(0) @map("base_price")
+  pricePerKm     Float        @default(0) @map("price_per_km")
+  maxDeliveryMin Int          @default(60) @map("max_delivery_min")
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  orders         Order[]
+  shifts         Shift[]
+
+  @@index([organizationId])
+  @@map("zones")
+}
+
+model Warehouse {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  address        Json         // { city, street, building } — шифруется на уровне сервиса
+  lat            Float
+  lon            Float
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  shifts         Shift[]
+  orders         Order[]
+
+  @@index([organizationId])
+  @@map("warehouses")
+}
+
+model PickupPoint {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  address        Json
+  lat            Float
+  lon            Float
+  workingHours   Json?        @map("working_hours") // { mon: "9-18", tue: "9-18", ... }
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  orders         Order[]
+
+  @@index([organizationId])
+  @@map("pickup_points")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHIFTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Shift {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  courierId      String       @map("courier_id")
+  zoneId         String?      @map("zone_id")
+  warehouseId    String?      @map("warehouse_id")
+  status         ShiftStatus  @default(SCHEDULED)
+  scheduledStart DateTime     @map("scheduled_start")
+  scheduledEnd   DateTime     @map("scheduled_end")
+  actualStart    DateTime?    @map("actual_start")
+  actualEnd      DateTime?    @map("actual_end")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  courier        Courier      @relation(fields: [courierId], references: [id])
+  zone           Zone?        @relation(fields: [zoneId], references: [id])
+  warehouse      Warehouse?   @relation(fields: [warehouseId], references: [id])
+
+  @@index([courierId])
+  @@index([organizationId, scheduledStart])
+  @@map("shifts")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ORDERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Order {
+  id                String           @id @default(uuid())
+  organizationId    String           @map("organization_id")
+  externalId        String?          @map("external_id")
+  number            String           @unique
+  clientId          String           @map("client_id")
+  courierId         String?          @map("courier_id")
+  zoneId            String?          @map("zone_id")
+  warehouseId       String?          @map("warehouse_id")    // склад отгрузки
+  pickupPointId     String?          @map("pickup_point_id") // ПВЗ (если не домой)
+  routeId           String?          @map("route_id")
+  dispatchMode      DispatchMode     @default(AUTO) @map("dispatch_mode")
+  status            OrderStatus      @default(CREATED)
+  pickupAddress     Json             @map("pickup_address")
+  deliveryAddress   Json             @map("delivery_address") // зашифровано на уровне сервиса
+  // PII получателя — шифруются AES-256-GCM на уровне сервиса
+  recipientNameEnc  String           @map("recipient_name_enc")
+  recipientPhoneEnc String           @map("recipient_phone_enc")
+  // Cargo
+  weight            Float?
+  dimensionsJson    Json?            @map("dimensions")
+  declaredValue     Float?           @map("declared_value")
+  paymentOnDelivery Float?           @map("payment_on_delivery")
+  // Timing
+  scheduledAt       DateTime?        @map("scheduled_at")
+  slaDeadlineAt     DateTime?        @map("sla_deadline_at")
+  pickedUpAt        DateTime?        @map("picked_up_at")
+  deliveredAt       DateTime?        @map("delivered_at")
+  deadlineAt        DateTime?        @map("deadline_at")
+  // Proof of delivery
+  photoUrl          String?          @map("photo_url")
+  signatureUrl      String?          @map("signature_url")
+  recipientSigned   Boolean          @default(false) @map("recipient_signed")
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  organization      Organization     @relation(fields: [organizationId], references: [id])
+  client            Client           @relation(fields: [clientId], references: [id])
+  courier           Courier?         @relation("CourierOrders", fields: [courierId], references: [id])
+  zone              Zone?            @relation(fields: [zoneId], references: [id])
+  warehouse         Warehouse?       @relation(fields: [warehouseId], references: [id])
+  pickupPoint       PickupPoint?     @relation(fields: [pickupPointId], references: [id])
+  route             Route?           @relation(fields: [routeId], references: [id])
+  statusHistory     OrderStatusEvent[]
+  dispatchOffers    DispatchOffer[]
+  recipientContacts RecipientContact[]
+  trackingTokens    TrackingToken[]
+  routeStops        RouteStop[]
+
+  @@index([organizationId, status])
+  @@index([courierId])
+  @@index([clientId])
+  @@index([zoneId])
+  @@map("orders")
+}
+
+model OrderStatusEvent {
+  id        String      @id @default(uuid())
+  orderId   String      @map("order_id")
+  status    OrderStatus
+  comment   String?
+  lat       Float?
+  lon       Float?
+  createdAt DateTime    @default(now()) @map("created_at")
+  createdBy String?     @map("created_by")
+  order     Order       @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_status_events")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DISPATCH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model DispatchOffer {
+  id          String      @id @default(uuid())
+  orderId     String      @map("order_id")
+  courierId   String      @map("courier_id")
+  status      OfferStatus @default(PENDING)
+  expiresAt   DateTime    @map("expires_at")
+  respondedAt DateTime?   @map("responded_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  order       Order       @relation(fields: [orderId], references: [id])
+  courier     Courier     @relation(fields: [courierId], references: [id])
+
+  @@index([orderId])
+  @@index([courierId, status])
+  @@map("dispatch_offers")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTE OPTIMIZATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Route {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  courierId      String       @map("courier_id")
+  date           DateTime
+  totalKm        Float        @default(0) @map("total_km")
+  totalOrders    Int          @default(0) @map("total_orders")
+  estimatedMin   Int          @default(0) @map("estimated_min")
+  polyline       String?      // encoded polyline for map rendering
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  courier        Courier      @relation(fields: [courierId], references: [id])
+  stops          RouteStop[]
+  orders         Order[]
+
+  @@index([courierId, date])
+  @@map("routes")
+}
+
+model RouteStop {
+  id         String    @id @default(uuid())
+  routeId    String    @map("route_id")
+  orderId    String    @map("order_id")
+  position   Int
+  lat        Float
+  lon        Float
+  etaMin     Int       @map("eta_min") // минут от старта маршрута
+  arrivedAt  DateTime? @map("arrived_at")
+  route      Route     @relation(fields: [routeId], references: [id])
+  order      Order     @relation(fields: [orderId], references: [id])
+
+  @@index([routeId])
+  @@map("route_stops")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GPS TRACKING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model LocationLog {
+  id        BigInt   @id @default(autoincrement())
+  courierId String   @map("courier_id")
+  lat       Float
+  lon       Float
+  speed     Float?
+  heading   Float?
+  accuracy  Float?
+  timestamp DateTime
+  courier   Courier  @relation(fields: [courierId], references: [id])
+
+  @@index([courierId, timestamp])
+  @@map("location_logs")
+}
+
+model GeoFenceEvent {
+  id         String   @id @default(uuid())
+  courierId  String   @map("courier_id")
+  zoneId     String   @map("zone_id")
+  eventType  String   @map("event_type") // ENTER | EXIT
+  lat        Float
+  lon        Float
+  occurredAt DateTime @map("occurred_at")
+
+  @@index([courierId])
+  @@map("geo_fence_events")
+}
+
+model EtaSnapshot {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  courierId   String   @map("courier_id")
+  etaMinutes  Int      @map("eta_minutes")
+  distanceKm  Float    @map("distance_km")
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+
+  @@index([orderId])
+  @@map("eta_snapshots")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALERTS & MONITORING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Alert {
+  id             String        @id @default(uuid())
+  organizationId String        @map("organization_id")
+  type           AlertType
+  severity       AlertSeverity
+  entityType     String        @map("entity_type") // "Order" | "Courier"
+  entityId       String        @map("entity_id")
+  message        String
+  meta           Json?
+  resolvedAt     DateTime?     @map("resolved_at")
+  resolvedBy     String?       @map("resolved_by")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, resolvedAt])
+  @@index([entityType, entityId])
+  @@map("alerts")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RECIPIENT COMMUNICATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model NotificationTemplate {
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  event          NotifyEvent
+  channel        ContactChannel
+  template       String         // "Ваш заказ №{number} доставит {courierName}. ETA: {eta}"
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, event, channel])
+  @@map("notification_templates")
+}
+
+model RecipientContact {
+  id           String           @id @default(uuid())
+  orderId      String           @map("order_id")
+  channel      ContactChannel
+  direction    ContactDirection
+  status       ContactStatus
+  body         String?
+  recordingUrl String?          @map("recording_url")
+  externalId   String?          @map("external_id") // ID в системе провайдера
+  createdAt    DateTime         @default(now()) @map("created_at")
+  order        Order            @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("recipient_contacts")
+}
+
+model TrackingToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @default(uuid())
+  orderId   String   @map("order_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  @@map("tracking_tokens")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAYOUTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model PayoutRule {
+  id              String   @id @default(uuid())
+  organizationId  String   @map("organization_id")
+  name            String
+  baseRate        Float    @map("base_rate")
+  kmRate          Float    @default(0) @map("km_rate")
+  bonusPercentage Float    @default(0) @map("bonus_percentage")
+  penaltyPerLate  Float    @default(0) @map("penalty_per_late")
+  isDefault       Boolean  @default(false) @map("is_default")
+  createdAt       DateTime @default(now()) @map("created_at")
+  payouts         Payout[]
+
+  @@index([organizationId])
+  @@map("payout_rules")
+}
+
+model Payout {
+  id            String       @id @default(uuid())
+  courierId     String       @map("courier_id")
+  ruleId        String       @map("rule_id")
+  periodStart   DateTime     @map("period_start")
+  periodEnd     DateTime     @map("period_end")
+  ordersCount   Int          @map("orders_count")
+  totalKm       Float        @default(0) @map("total_km")
+  baseAmount    Float        @map("base_amount")
+  bonusAmount   Float        @default(0) @map("bonus_amount")
+  penaltyAmount Float        @default(0) @map("penalty_amount")
+  totalAmount   Float        @map("total_amount")
+  status        PayoutStatus @default(PENDING)
+  paidAt        DateTime?    @map("paid_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  courier       Courier      @relation(fields: [courierId], references: [id])
+  rule          PayoutRule   @relation(fields: [ruleId], references: [id])
+
+  @@index([courierId])
+  @@map("payouts")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  channel   NotifyChannel
+  sentAt    DateTime?        @map("sent_at")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  userId    String   @map("user_id")
+  action    String
+  entity    String
+  entityId  String   @map("entity_id")
+  diff      Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
