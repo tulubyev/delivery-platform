@@ -60,6 +60,25 @@ export const UpdateTenantConfigSchema = z.object({
 })
 export type UpdateTenantConfigDto = z.infer<typeof UpdateTenantConfigSchema>
 
+// ── Zones ─────────────────────────────────────────────────────────────────────
+
+const GeoJsonPolygonSchema = z.object({
+  type:        z.literal('Polygon'),
+  coordinates: z.array(z.array(z.tuple([z.number(), z.number()]))).min(1),
+})
+
+export const CreateZoneSchema = z.object({
+  name:           z.string().min(1).max(100),
+  polygon:        GeoJsonPolygonSchema,
+  basePrice:      z.number().nonnegative().optional(),
+  pricePerKm:     z.number().nonnegative().optional(),
+  maxDeliveryMin: z.number().int().min(1).max(1440).optional(),
+})
+export type CreateZoneDto = z.infer<typeof CreateZoneSchema>
+
+export const UpdateZoneSchema = CreateZoneSchema.partial()
+export type UpdateZoneDto = z.infer<typeof UpdateZoneSchema>
+
 // ── Courier onboarding ────────────────────────────────────────────────────────
 
 export const SubmitDocumentsSchema = z.object({
