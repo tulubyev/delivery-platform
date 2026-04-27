@@ -1,10 +1,12 @@
 version: '3.9'
 
 services:
+  # ── API ─────────────────────────────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    image: delivery-api:latest
     container_name: delivery-api
     restart: unless-stopped
     env_file: .env
@@ -19,12 +21,19 @@ services:
       - internal
     volumes:
       - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
+  # ── Redis ────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: delivery-redis
     restart: unless-stopped
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:
       - redis_data:/data
     networks:
@@ -35,6 +44,23 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Web builder (собирает и кладёт dist в volume) ────────────────────────
+  web-builder:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.delivery.yourdomain.ru}
+    image: delivery-web-builder:latest
+    container_name: delivery-web-builder
+    volumes:
+      - web_dist:/app/apps/web/dist
+    entrypoint: ["sh", "-c", "cp -r /app/apps/web/dist/. /mnt/ 2>/dev/null; exit 0"]
+    # Используем profiles чтобы запускать только при деплое
+    profiles: ["build"]
+
+  # ── nginx + TLS ─────────────────────────────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
     container_name: delivery-nginx
@@ -49,9 +75,21 @@ services:
       - certbot_certs:/etc/letsencrypt:ro
       - web_dist:/usr/share/nginx/html:ro
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     networks:
       - internal
+
+  # ── Certbot (Let's Encrypt) ──────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: delivery-certbot
+    volumes:
+      - certbot_webroot:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    # Запускается вручную: docker compose run --rm certbot certonly ...
+    entrypoint: ["sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"]
+    profiles: ["certbot"]
 
 networks:
   internal:
@@ -60,6 +98,6 @@ networks:
 volumes:
   redis_data:
   uploads:
+  web_dist:
   certbot_webroot:
   certbot_certs:
-  web_dist:

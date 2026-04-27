@@ -3,7 +3,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { SupervisorLayout } from '@/layouts/SupervisorLayout'
+import { ClientLayout } from '@/layouts/ClientLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { ClientDashboardPage } from '@/pages/client/DashboardPage'
+import { ClientOrdersPage } from '@/pages/client/OrdersPage'
+import { CreateOrderPage } from '@/pages/client/CreateOrderPage'
+import { ClientOrderDetailPage } from '@/pages/client/OrderDetailPage'
+import { ClientDocsPage } from '@/pages/client/DocsPage'
 import { DashboardPage } from '@/pages/admin/DashboardPage'
 import { OrdersPage } from '@/pages/admin/OrdersPage'
 import { CouriersPage } from '@/pages/admin/CouriersPage'
@@ -50,6 +56,17 @@ export function App() {
               <Route path="/supervisor/orders"   element={<OrdersPage />} />
               <Route path="/supervisor/couriers" element={<SupervisorCouriersPage />} />
               <Route path="/supervisor/alerts"   element={<AlertsPage />} />
+            </Route>
+          </Route>
+
+          {/* CLIENT */}
+          <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+            <Route element={<ClientLayout />}>
+              <Route path="/client"              element={<ClientDashboardPage />} />
+              <Route path="/client/orders"       element={<ClientOrdersPage />} />
+              <Route path="/client/orders/:id"   element={<ClientOrderDetailPage />} />
+              <Route path="/client/new"          element={<CreateOrderPage />} />
+              <Route path="/client/docs"         element={<ClientDocsPage />} />
             </Route>
           </Route>
 

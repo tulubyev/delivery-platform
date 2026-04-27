@@ -79,6 +79,20 @@ app.patch('/api/config',
     } catch (e) { next(e) }
   },
 )
+// GET /api/clients/me — CLIENT получает свой профиль (clientId нужен при создании заказа)
+app.get('/api/clients/me',
+  authenticate, authorize('CLIENT'),
+  async (req, res, next) => {
+    try {
+      const client = await prisma.client.findUnique({
+        where:  { userId: req.user!.sub },
+        select: { id: true, companyName: true, inn: true, contractNo: true },
+      })
+      res.json(ok(client ? { clientId: client.id, ...client } : null))
+    } catch (e) { next(e) }
+  },
+)
+
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
 
