@@ -18,6 +18,9 @@ import { dispatchRouter } from './modules/dispatch/dispatch.controller'
 import { alertsRouter } from './modules/alerts/alert.controller'
 import { routesRouter } from './modules/routes/route.controller'
 import { notificationsRouter } from './modules/notifications/notification.controller'
+import { warehousesRouter } from './modules/warehouses/warehouse.controller'
+import { pickupPointsRouter } from './modules/pickup-points/pickup-point.controller'
+import { shiftsRouter } from './modules/shifts/shift.controller'
 import { wsManager } from './modules/ws/ws.manager'
 import { prisma } from './infrastructure/db/prisma'
 import { startDispatchWorker, startOfferExpiryWorker } from './infrastructure/workers/dispatch.worker'
@@ -44,6 +47,9 @@ app.use('/api/dispatch',      dispatchRouter)
 app.use('/api/alerts',        alertsRouter)
 app.use('/api/routes',        routesRouter)
 app.use('/api/notifications', notificationsRouter)
+app.use('/api/warehouses',   warehousesRouter)
+app.use('/api/pickup-points', pickupPointsRouter)
+app.use('/api/shifts',       shiftsRouter)
 app.use('/track',             publicTrackingRouter)
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
