@@ -10,5 +10,11 @@
     "db:studio": "pnpm --filter api db:studio",
     "lint": "pnpm -r lint"
   },
-  "engines": { "node": ">=20.0.0", "pnpm": ">=9.0.0" }
+  "engines": { "node": ">=20.0.0", "pnpm": ">=9.0.0" },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.3",
+      "@types/react-dom": "^18.3.0"
+    }
+  }
 }

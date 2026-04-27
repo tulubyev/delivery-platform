@@ -6,23 +6,20 @@ import { SupervisorLayout } from '@/layouts/SupervisorLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { DashboardPage } from '@/pages/admin/DashboardPage'
 import { OrdersPage } from '@/pages/admin/OrdersPage'
+import { CouriersPage } from '@/pages/admin/CouriersPage'
+import { ShiftsPage } from '@/pages/admin/ShiftsPage'
+import { ZonesPage } from '@/pages/admin/ZonesPage'
+import { WarehousesPage } from '@/pages/admin/WarehousesPage'
+import { PaymentsPage } from '@/pages/admin/PaymentsPage'
+import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
 import { AlertsPage } from '@/pages/supervisor/AlertsPage'
+import { SupervisorCouriersPage } from '@/pages/supervisor/CouriersPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, retry: 1 } },
 })
-
-// Placeholder pages
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="flex h-full items-center justify-center text-slate-400">
-    <div className="text-center">
-      <p className="text-lg font-medium">{title}</p>
-      <p className="text-sm">В разработке</p>
-    </div>
-  </div>
-)
 
 export function App() {
   return (
@@ -36,13 +33,13 @@ export function App() {
             <Route element={<AdminLayout />}>
               <Route path="/admin"            element={<DashboardPage />} />
               <Route path="/admin/orders"     element={<OrdersPage />} />
-              <Route path="/admin/couriers"   element={<Placeholder title="Курьеры" />} />
-              <Route path="/admin/shifts"     element={<Placeholder title="Смены" />} />
-              <Route path="/admin/zones"      element={<Placeholder title="Зоны" />} />
-              <Route path="/admin/warehouses" element={<Placeholder title="Склады" />} />
-              <Route path="/admin/payments"   element={<Placeholder title="Платежи" />} />
+              <Route path="/admin/couriers"   element={<CouriersPage />} />
+              <Route path="/admin/shifts"     element={<ShiftsPage />} />
+              <Route path="/admin/zones"      element={<ZonesPage />} />
+              <Route path="/admin/warehouses" element={<WarehousesPage />} />
+              <Route path="/admin/payments"   element={<PaymentsPage />} />
               <Route path="/admin/alerts"     element={<AlertsAdminPage />} />
-              <Route path="/admin/settings"   element={<Placeholder title="Настройки" />} />
+              <Route path="/admin/settings"   element={<SettingsPage />} />
             </Route>
           </Route>
 
@@ -51,7 +48,7 @@ export function App() {
             <Route element={<SupervisorLayout />}>
               <Route path="/supervisor"          element={<MapPage />} />
               <Route path="/supervisor/orders"   element={<OrdersPage />} />
-              <Route path="/supervisor/couriers" element={<Placeholder title="Курьеры" />} />
+              <Route path="/supervisor/couriers" element={<SupervisorCouriersPage />} />
               <Route path="/supervisor/alerts"   element={<AlertsPage />} />
             </Route>
           </Route>

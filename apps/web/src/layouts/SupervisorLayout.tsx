@@ -40,9 +40,9 @@ export function SupervisorLayout() {
             >
               <Icon size={16} />
               {label}
-              {badge && alertsCount?.total > 0 && (
+              {badge && (alertsCount?.total ?? 0) > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {alertsCount.total > 9 ? '9+' : alertsCount.total}
+                  {(alertsCount?.total ?? 0) > 9 ? '9+' : alertsCount?.total}
                 </span>
               )}
             </NavLink>

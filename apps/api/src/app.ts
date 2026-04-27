@@ -23,6 +23,9 @@ import { pickupPointsRouter } from './modules/pickup-points/pickup-point.control
 import { shiftsRouter } from './modules/shifts/shift.controller'
 import { paymentsRouter } from './modules/payments/payment.controller'
 import { wsManager } from './modules/ws/ws.manager'
+import { authenticate, authorize } from './middleware/auth.middleware'
+import { organizationService } from './modules/organizations/organization.service'
+import { ok } from '@delivery/shared'
 import { prisma } from './infrastructure/db/prisma'
 import { startDispatchWorker, startOfferExpiryWorker } from './infrastructure/workers/dispatch.worker'
 import { startAlertWorker } from './infrastructure/workers/alert.worker'
@@ -57,6 +60,25 @@ app.use('/api/pickup-points', pickupPointsRouter)
 app.use('/api/shifts',        shiftsRouter)
 app.use('/api/payments',      paymentsRouter)
 app.use('/track',             publicTrackingRouter)
+
+// Shortcut: GET/PATCH /api/config — tenant config for current user's org
+app.get('/api/config',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN'),
+  async (req, res, next) => {
+    try {
+      const org = await organizationService.getById(req.user!.organizationId!)
+      res.json(ok(org.config))
+    } catch (e) { next(e) }
+  },
+)
+app.patch('/api/config',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN'),
+  async (req, res, next) => {
+    try {
+      res.json(ok(await organizationService.updateConfig(req.user!.organizationId!, req.body)))
+    } catch (e) { next(e) }
+  },
+)
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
 

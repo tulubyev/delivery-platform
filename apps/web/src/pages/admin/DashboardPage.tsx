@@ -66,7 +66,7 @@ export function DashboardPage() {
         {isLoading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />) : (<>
           <StatCard title="Заказов сегодня"  value={stats?.orders?.total ?? 0}            icon={Package}       color="blue" />
           <StatCard title="Курьеров онлайн"  value={stats?.couriers?.length ?? 0}          icon={Truck}         color="green" />
-          <StatCard title="Активных алертов" value={alertsCount?.total ?? 0}               icon={AlertTriangle} color={alertsCount?.CRITICAL > 0 ? 'red' : 'amber'} />
+          <StatCard title="Активных алертов" value={alertsCount?.total ?? 0}               icon={AlertTriangle} color={(alertsCount?.CRITICAL ?? 0) > 0 ? 'red' : 'amber'} />
           <StatCard title="Выручка (месяц)"  value={formatMoney(stats?.payments?.revenue ?? 0)} icon={TrendingUp}    color="green"
             sub={`Комиссия: ${formatMoney(stats?.payments?.commission ?? 0)}`} />
         </>)}
