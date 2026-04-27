@@ -21,6 +21,7 @@ import { notificationsRouter } from './modules/notifications/notification.contro
 import { warehousesRouter } from './modules/warehouses/warehouse.controller'
 import { pickupPointsRouter } from './modules/pickup-points/pickup-point.controller'
 import { shiftsRouter } from './modules/shifts/shift.controller'
+import { paymentsRouter } from './modules/payments/payment.controller'
 import { wsManager } from './modules/ws/ws.manager'
 import { prisma } from './infrastructure/db/prisma'
 import { startDispatchWorker, startOfferExpiryWorker } from './infrastructure/workers/dispatch.worker'
@@ -33,6 +34,10 @@ const app = express()
 
 app.use(helmet())
 app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*', credentials: true }))
+
+// YooKassa webhook нужен raw body ДО express.json()
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
+
 app.use(express.json())
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 
@@ -47,9 +52,10 @@ app.use('/api/dispatch',      dispatchRouter)
 app.use('/api/alerts',        alertsRouter)
 app.use('/api/routes',        routesRouter)
 app.use('/api/notifications', notificationsRouter)
-app.use('/api/warehouses',   warehousesRouter)
+app.use('/api/warehouses',    warehousesRouter)
 app.use('/api/pickup-points', pickupPointsRouter)
-app.use('/api/shifts',       shiftsRouter)
+app.use('/api/shifts',        shiftsRouter)
+app.use('/api/payments',      paymentsRouter)
 app.use('/track',             publicTrackingRouter)
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
@@ -62,7 +68,6 @@ const PORT = Number(process.env.PORT ?? 3000)
 server.listen(PORT, async () => {
   await prisma.$connect()
 
-  // BullMQ Workers
   startDispatchWorker()
   startOfferExpiryWorker()
   startAlertWorker()

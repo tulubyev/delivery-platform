@@ -77,6 +77,21 @@ enum PayoutStatus {
   PAID
 }
 
+enum PaymentStatus {
+  PENDING
+  WAITING_FOR_CAPTURE
+  SUCCEEDED
+  CANCELLED
+  REFUNDED
+}
+
+enum AgentReportStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DISPUTED
+}
+
 enum AlertType {
   COURIER_OFFLINE       // курьер не выходил на связь > N минут
   ORDER_SLA_BREACH      // заказ не доставлен в срок
@@ -160,6 +175,8 @@ model Organization {
   alerts                Alert[]
   routes                Route[]
   notificationTemplates NotificationTemplate[]
+  payments              Payment[]
+  agentReports          AgentReport[]
 
   @@map("organizations")
 }
@@ -182,6 +199,11 @@ model TenantConfig {
   offlineThresholdMin    Int          @default(10) @map("offline_threshold_min")
   // GPS
   gpsIntervalSec         Int          @default(30) @map("gps_interval_sec")
+  // Agent financials
+  agentCommissionPct     Float        @default(5.0) @map("agent_commission_pct")  // % платформы
+  // YooKassa (зашифровано на уровне сервиса)
+  yookassaShopId         String?      @map("yookassa_shop_id")
+  yookassaSecretKey      String?      @map("yookassa_secret_key")
   // Integrations (encrypted at app level)
   twoGisApiKey           String?      @map("two_gis_api_key")
   smsProvider            String?      @map("sms_provider")
@@ -451,6 +473,7 @@ model Order {
   dispatchOffers    DispatchOffer[]
   recipientContacts RecipientContact[]
   trackingTokens    TrackingToken[]
+  payments          Payment[]
   routeStops        RouteStop[]
 
   @@index([organizationId, status])
@@ -646,6 +669,71 @@ model TrackingToken {
   order     Order    @relation(fields: [orderId], references: [id])
 
   @@map("tracking_tokens")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAYMENTS (YooKassa — агентская схема)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Payment {
+  id               String        @id @default(uuid())
+  organizationId   String        @map("organization_id")
+  orderId          String        @map("order_id")
+  yookassaId       String?       @unique @map("yookassa_id")   // id платежа в YooKassa
+  amount           Float                                        // полная сумма (руб)
+  commissionAmount Float         @default(0) @map("commission_amount") // доля платформы
+  principalAmount  Float         @default(0) @map("principal_amount")  // сумма принципалу
+  currency         String        @default("RUB")
+  status           PaymentStatus @default(PENDING)
+  description      String?
+  receiptSent      Boolean       @default(false) @map("receipt_sent")
+  refundId         String?       @map("refund_id")
+  metadata         Json?
+  capturedAt       DateTime?     @map("captured_at")
+  cancelledAt      DateTime?     @map("cancelled_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  organization     Organization  @relation(fields: [organizationId], references: [id])
+  order            Order         @relation(fields: [orderId], references: [id])
+  agentReportItems AgentReportItem[]
+
+  @@index([organizationId, status])
+  @@index([orderId])
+  @@map("payments")
+}
+
+model AgentReport {
+  id             String            @id @default(uuid())
+  organizationId String            @map("organization_id")
+  periodStart    DateTime          @map("period_start")
+  periodEnd      DateTime          @map("period_end")
+  paymentsCount  Int               @default(0) @map("payments_count")
+  totalAmount    Float             @default(0) @map("total_amount")     // сумма всех платежей
+  commissionAmt  Float             @default(0) @map("commission_amt")   // агентское вознаграждение
+  principalAmt   Float             @default(0) @map("principal_amt")    // к перечислению принципалу
+  commissionPct  Float             @map("commission_pct")               // % на момент формирования
+  status         AgentReportStatus @default(DRAFT)
+  sentAt         DateTime?         @map("sent_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  items          AgentReportItem[]
+
+  @@index([organizationId, periodStart])
+  @@map("agent_reports")
+}
+
+model AgentReportItem {
+  id            String      @id @default(uuid())
+  reportId      String      @map("report_id")
+  paymentId     String      @map("payment_id")
+  amount        Float
+  commissionAmt Float       @map("commission_amt")
+  principalAmt  Float       @map("principal_amt")
+  report        AgentReport @relation(fields: [reportId], references: [id])
+  payment       Payment     @relation(fields: [paymentId], references: [id])
+
+  @@map("agent_report_items")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
