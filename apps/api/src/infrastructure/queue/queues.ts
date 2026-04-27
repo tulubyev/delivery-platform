@@ -9,6 +9,7 @@ export const QUEUE_NAMES = {
   PAYOUT_CALC:    'payout-calculation',
   WEBHOOK:        'webhook-delivery',
   ALERT:          'alert-check',
+  ROUTE_BUILD:    'route-build',
 } as const
 
 const defaultOpts = { attempts: 3, backoff: { type: 'exponential' as const, delay: 2000 }, removeOnComplete: 100, removeOnFail: 200 }
@@ -21,6 +22,7 @@ export const etaQueue           = new Queue(QUEUE_NAMES.ETA_CALC,       { connec
 export const payoutQueue        = new Queue(QUEUE_NAMES.PAYOUT_CALC,    { connection: conn() })
 export const webhookQueue       = new Queue(QUEUE_NAMES.WEBHOOK,        { connection: conn(), defaultJobOptions: { attempts: 5, backoff: { type: 'exponential', delay: 1000 } } })
 export const alertQueue         = new Queue(QUEUE_NAMES.ALERT,          { connection: conn() })
+export const routeQueue         = new Queue(QUEUE_NAMES.ROUTE_BUILD,    { connection: conn(), defaultJobOptions: defaultOpts })
 
 // ── Job data types ────────────────────────────────────────────────────────────
 

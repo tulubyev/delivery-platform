@@ -1,7 +1,7 @@
 import { DispatchMode, OfferStatus, OrderStatus, AlertType, AlertSeverity } from '@prisma/client'
 import { prisma } from '../../infrastructure/db/prisma'
 import { redis } from '../../infrastructure/redis/redis'
-import { dispatchQueue, dispatchOfferQueue } from '../../infrastructure/queue/queues'
+import { dispatchQueue, dispatchOfferQueue, routeQueue } from '../../infrastructure/queue/queues'
 import { haversineKm } from '../zones/zone.service'
 
 // Redis ключи
@@ -87,6 +87,8 @@ async function autoDispatch(orderId: string, orgId: string, attempt: number): Pr
         data: { orderId, status: OrderStatus.ASSIGNED, createdBy: 'auto-dispatch' },
       }),
     ])
+    // Пересчёт маршрута курьера после назначения
+    await routeQueue.add('build', { courierId: courier.id }, { jobId: `route:${courier.id}`, delay: 1000 })
     return true
   } finally {
     await redis.del(lockKey(orderId))
@@ -188,6 +190,8 @@ async function acceptOffer(offerId: string, courierId: string): Promise<boolean>
     const orgId = order.organizationId
     const zone  = order.zoneId ?? 'default'
     await redis.srem(poolKey(orgId, zone), offer.orderId)
+    // Пересчёт маршрута курьера после принятия оффера
+    await routeQueue.add('build', { courierId }, { jobId: `route:${courierId}`, delay: 1000 })
     return true
   } finally {
     await redis.del(lockKey(offer.orderId))
