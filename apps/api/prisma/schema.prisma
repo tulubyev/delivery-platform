@@ -215,10 +215,24 @@ model User {
   courier        Courier?
   client         Client?
   refreshTokens  RefreshToken[]
-  auditLogs      AuditLog[]
+  auditLogs         AuditLog[]
+  pushSubscriptions UserPushSubscription[]
 
   @@index([organizationId])
   @@map("users")
+}
+
+model UserPushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  endpoint  String
+  keys      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint], name: "userId_endpoint")
+  @@map("user_push_subscriptions")
 }
 
 model RefreshToken {
@@ -258,6 +272,7 @@ model Courier {
   lastSeenAt          DateTime?          @map("last_seen_at")
   currentLat          Float?             @map("current_lat")
   currentLon          Float?             @map("current_lon")
+  expoPushToken       String?            @map("expo_push_token")
   // Stats
   rating              Float              @default(5.0)
   totalOrders         Int                @default(0) @map("total_orders")

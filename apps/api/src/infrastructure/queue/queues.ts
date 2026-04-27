@@ -39,12 +39,14 @@ export interface DispatchOfferJobData {
 }
 
 export interface NotificationJobData {
-  userId:  string
-  type:    string
-  title:   string
-  body:    string
-  channel: 'PUSH' | 'SMS' | 'IN_APP'
-  data?:   Record<string, unknown>
+  userId:   string
+  type:     string
+  title:    string
+  body:     string
+  channel:  'PUSH' | 'SMS' | 'IN_APP'
+  data?:    Record<string, unknown>
+  phone?:   string   // для SMS-канала (уже расшифрованный номер)
+  orderId?: string   // для логирования в RecipientContact
 }
 
 export interface WebhookJobData {

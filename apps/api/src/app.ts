@@ -17,11 +17,13 @@ import { zonesRouter } from './modules/zones/zone.controller'
 import { dispatchRouter } from './modules/dispatch/dispatch.controller'
 import { alertsRouter } from './modules/alerts/alert.controller'
 import { routesRouter } from './modules/routes/route.controller'
+import { notificationsRouter } from './modules/notifications/notification.controller'
 import { wsManager } from './modules/ws/ws.manager'
 import { prisma } from './infrastructure/db/prisma'
 import { startDispatchWorker, startOfferExpiryWorker } from './infrastructure/workers/dispatch.worker'
 import { startAlertWorker } from './infrastructure/workers/alert.worker'
 import { startRouteWorker } from './infrastructure/workers/route.worker'
+import { startNotificationWorker } from './infrastructure/workers/notification.worker'
 import { dispatchQueue } from './infrastructure/queue/queues'
 
 const app = express()
@@ -41,6 +43,7 @@ app.use('/api/zones',         zonesRouter)
 app.use('/api/dispatch',      dispatchRouter)
 app.use('/api/alerts',        alertsRouter)
 app.use('/api/routes',        routesRouter)
+app.use('/api/notifications', notificationsRouter)
 app.use('/track',             publicTrackingRouter)
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
@@ -58,6 +61,7 @@ server.listen(PORT, async () => {
   startOfferExpiryWorker()
   startAlertWorker()
   startRouteWorker()
+  startNotificationWorker()
 
   console.log(`🚀 API  http://localhost:${PORT}`)
   console.log(`🔌 WS   ws://localhost:${PORT}/ws`)
