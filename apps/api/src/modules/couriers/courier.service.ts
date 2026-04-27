@@ -66,6 +66,12 @@ export const courierService = {
     return updated
   },
 
+  async savePushToken(courierId: string, expoPushToken: string) {
+    const courier = await prisma.courier.findUnique({ where: { id: courierId } })
+    if (!courier) throw new AppError(404, 'Курьер не найден')
+    return prisma.courier.update({ where: { id: courierId }, data: { expoPushToken } })
+  },
+
   async list(filters: { verificationStatus?: VerificationStatus; page: number; limit: number }) {
     const { verificationStatus, page, limit } = filters
     const where = verificationStatus ? { verificationStatus } : {}

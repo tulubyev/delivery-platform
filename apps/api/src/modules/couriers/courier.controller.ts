@@ -48,6 +48,21 @@ couriersRouter.get(
   },
 )
 
+// Courier: save Expo push token
+couriersRouter.patch(
+  '/:id/push-token',
+  authenticate,
+  authorize('COURIER'),
+  async (req, res, next) => {
+    try {
+      const { expoPushToken } = req.body
+      if (!expoPushToken || typeof expoPushToken !== 'string')
+        return res.status(400).json({ error: 'expoPushToken required' })
+      res.json(ok(await courierService.savePushToken(req.params.id, expoPushToken)))
+    } catch (e) { next(e) }
+  },
+)
+
 // Admin/Dispatcher: approve or reject a courier's documents
 couriersRouter.patch(
   '/:id/verify',
