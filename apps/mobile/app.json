@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Delivery Courier",
-    "slug": "delivery-courier",
+    "slug": "lastmiles-courier",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.delivery.courier",
+      "bundleIdentifier": "ru.lastmiles.courier",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Геолокация нужна для отслеживания вашего маршрута при доставке заказов.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Геолокация в фоне нужна для передачи вашего местоположения диспетчеру во время смены.",
@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563eb"
       },
-      "package": "com.delivery.courier",
+      "package": "ru.lastmiles.courier",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [

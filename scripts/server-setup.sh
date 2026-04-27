@@ -3,9 +3,9 @@
 # Запускать от root: bash server-setup.sh
 set -e
 
-DOMAIN=${1:-"delivery.yourdomain.ru"}
+DOMAIN=${1:-"lastmiles.ru"}
 API_DOMAIN="api.${DOMAIN}"
-EMAIL=${2:-"admin@yourdomain.ru"}
+EMAIL=${2:-"admin@lastmiles.ru"}
 
 echo "=== Delivery Platform Server Setup ==="
 echo "Domain: $DOMAIN | API: $API_DOMAIN | Email: $EMAIL"
@@ -50,7 +50,7 @@ YOOKASSA_SHOP_ID=your_shop_id
 YOOKASSA_SECRET_KEY=your_secret_key
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
-ALLOWED_ORIGINS=https://$DOMAIN
+ALLOWED_ORIGINS=https://lastmiles.ru
 PORT=3000
 NODE_ENV=production
 ENVEOF

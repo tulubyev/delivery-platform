@@ -51,7 +51,7 @@ services:
       dockerfile: apps/web/Dockerfile
       target: builder
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://api.delivery.yourdomain.ru}
+        VITE_API_URL: ${VITE_API_URL:-https://api.lastmiles.ru}
     image: delivery-web-builder:latest
     container_name: delivery-web-builder
     volumes:

@@ -15,7 +15,7 @@
       "android": { "buildType": "apk" },
       "ios":     { "distribution": "internal" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.delivery.yourdomain.ru"
+        "EXPO_PUBLIC_API_URL": "https://api.lastmiles.ru"
       }
     },
     "production": {
@@ -23,7 +23,7 @@
       "android": { "buildType": "app-bundle" },
       "ios":     { "distribution": "store" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.delivery.yourdomain.ru"
+        "EXPO_PUBLIC_API_URL": "https://api.lastmiles.ru"
       }
     }
   },
