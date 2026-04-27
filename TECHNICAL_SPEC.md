@@ -466,35 +466,110 @@ GET  /api/routes/:courierId/today   COURIER, SUPERVISOR
 
 ### 5.10 TrackingService (GPS)
 
-**Назначение:** приём GPS-координат, трекинг в реальном времени.
+**Назначение:** приём GPS-координат со смартфона курьера, трекинг в реальном времени, рассылка подписчикам.
 
-**Поток:**
-```
-Курьер (мобильное приложение):
-  → каждые gpsIntervalSec секунд отправляет LocationUpdate через WS
-  → API принимает: { courierId, lat, lon, speed, heading, accuracy, timestamp }
+#### Источник данных — смартфон курьера
 
-Backend:
-  1. Обновление Courier.currentLat/currentLon/lastSeenAt
-  2. Запись в LocationLog (для истории трека)
-  3. Pub/Sub в Redis: channel `courier:{courierId}` → фан-аут всем подписчикам
-  4. WS рассылка подписчикам заказа (клиенту, публичный трекинг)
-  5. Проверка geofence: точка вне зоны смены → GeoFenceEvent + Alert
-  6. Обновление ETA: RouteService.recalculateEta(courierId) → EtaSnapshot
-  7. Обновление Courier.isOnline = true
+Координаты поступают с мобильного приложения (React Native + Expo) двумя путями:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│           СМАРТФОН КУРЬЕРА (React Native + Expo)             │
+│                                                              │
+│  expo-location (background mode)                             │
+│  TaskManager.defineTask('BACKGROUND_LOCATION', handler)      │
+│  timeInterval: 30 000 мс  |  distanceInterval: 50 м         │
+└────────────┬──────────────────────┬──────────────────────────┘
+             │                      │
+    Приложение активно      Приложение свёрнуто
+             │                      │
+      WS send()              HTTP POST /api/tracking/location
+   (постоянное соединение)  (надёжно на iOS — Apple убивает WS в фоне)
+             │                      │
+             └──────────┬───────────┘
+                        ▼
+              API Server (Express + WS)
 ```
 
-**AlertWorker (каждые 60 сек):**
+**Ключевая особенность iOS:** WebSocket в фоне Apple закрывает через ~3 минуты. Поэтому background-трекинг использует HTTP, а WS — только пока приложение на экране.
+
+**Разрешения:**
+- iOS: `NSLocationAlwaysAndWhenInUseUsageDescription` → "Always Allow"
+- Android: `ACCESS_FINE_LOCATION` + `ACCESS_BACKGROUND_LOCATION` + Foreground Service (показывает уведомление в шторке)
+
+**Код TaskManager в courier-app:**
+```typescript
+TaskManager.defineTask('BACKGROUND_LOCATION', async ({ data }) => {
+  const { latitude, longitude, speed, heading, accuracy } = data.locations[0].coords
+  await fetch(`${API_URL}/api/tracking/location`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getToken()}` },
+    body: JSON.stringify({ lat: latitude, lon: longitude,
+                           speed, heading, accuracy, timestamp: new Date() }),
+  })
+})
+
+// Запуск при открытии смены
+await Location.startLocationUpdatesAsync('BACKGROUND_LOCATION', {
+  accuracy:          Location.Accuracy.Balanced,
+  timeInterval:      30_000,
+  distanceInterval:  50,
+  foregroundService: {
+    notificationTitle: 'Delivery — трекинг активен',
+    notificationBody:  'Нажмите чтобы открыть приложение',
+  },
+})
+
+// Остановка при закрытии смены / доставке последнего заказа
+await Location.stopLocationUpdatesAsync('BACKGROUND_LOCATION')
 ```
-- Курьеры у которых lastSeenAt < now - offlineThresholdMin → Alert COURIER_OFFLINE
-- Курьеры с активным заказом и speed = 0 > stuckThresholdMin → Alert COURIER_STUCK
-- Заказы где slaDeadlineAt < now + 15min и status != DELIVERED → Alert ORDER_SLA_BREACH
+
+**Экономия батареи:**
+
+| Параметр | Активный заказ | Фон / ожидание |
+|---|---|---|
+| `accuracy` | `High` | `Balanced` |
+| `timeInterval` | 15 сек | 30 сек |
+| `distanceInterval` | 20 м | 50 м |
+
+#### Поток обработки на сервере
+
+```
+Получен LocationUpdate (WS или HTTP POST):
+  1. Courier.currentLat/Lon/lastSeenAt = обновить
+  2. INSERT INTO location_logs
+  3. Redis PUBLISH courier:{id} → фан-аут подписчикам
+  4. WS push всем кто подписан на курьера (супервизор, публичный трекинг)
+  5. Geofence проверка → GeoFenceEvent + Alert если вышел из зоны смены
+  6. Пересчёт ETA (Haversine) → EtaSnapshot
+  7. Если ETA ≤ 10 мин → триггер уведомления получателю
+```
+
+#### Redis Pub/Sub fan-out
+
+```
+Курьер А публикует позицию
+  → Redis PUBLISH courier:A { lat, lon, speed, ts }
+    ├── WS соединение супервизора (подписан на org)     → маркер на карте
+    ├── WS соединение публичного трекинга (подписан на orderId) → маркер
+    └── ETA Worker (подписан на активные заказы)        → пересчёт
+```
+
+**AlertWorker (каждые 60 сек, BullMQ repeatable job):**
+```
+Для каждой организации:
+  CP-01: lastSeenAt < now − offlineThresholdMin    → Alert COURIER_OFFLINE (HIGH)
+  CP-02: активный заказ + speed = 0 > stuckThreshold → Alert COURIER_STUCK (MEDIUM)
+  CP-03: slaDeadlineAt < now()                     → Alert ORDER_SLA_BREACH (CRITICAL)
+  CP-04: заказ CREATED без курьера > 15 мин        → Alert DISPATCH_FAILED (HIGH)
+  CP-05: GeoFenceEvent за последний период          → Alert GEOFENCE_VIOLATION (MEDIUM)
 ```
 
 **Публичный трекинг:**
 - `GET /track/:token` — HTML страница с картой (без авторизации)
 - Токен живёт 24ч, привязан к заказу
 - Показывает: текущую позицию курьера + маршрут + ETA
+- WS подписка на `courier:{courierId}` → обновления в реальном времени
 
 ---
 

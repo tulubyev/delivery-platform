@@ -164,6 +164,7 @@ export type WsServerEvents =
 export type WsClientEvents =
   | { type: 'SUBSCRIBE_ORDER'; payload: { orderId: string } }
   | { type: 'SUBSCRIBE_COURIER'; payload: { courierId: string } }
+  | { type: 'SUBSCRIBE_ORG'; payload: Record<string, never> }
   | { type: 'LOCATION_UPDATE'; payload: GeoPoint }
 
 export interface ApiSuccess<T> { success: true; data: T }

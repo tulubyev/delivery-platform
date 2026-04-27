@@ -9,14 +9,17 @@ import { errorHandler } from './middleware/error.middleware'
 import { authRouter } from './modules/users/auth.controller'
 import { ordersRouter } from './modules/orders/order.controller'
 import { trackingRouter } from './modules/tracking/tracking.controller'
+import { publicTrackingRouter } from './modules/tracking/public-tracking.controller'
 import { payoutsRouter } from './modules/payouts/payouts.controller'
 import { couriersRouter } from './modules/couriers/courier.controller'
 import { organizationsRouter } from './modules/organizations/organization.controller'
 import { zonesRouter } from './modules/zones/zone.controller'
 import { dispatchRouter } from './modules/dispatch/dispatch.controller'
+import { alertsRouter } from './modules/alerts/alert.controller'
 import { wsManager } from './modules/ws/ws.manager'
 import { prisma } from './infrastructure/db/prisma'
 import { startDispatchWorker, startOfferExpiryWorker } from './infrastructure/workers/dispatch.worker'
+import { startAlertWorker } from './infrastructure/workers/alert.worker'
 import { dispatchQueue } from './infrastructure/queue/queues'
 
 const app = express()
@@ -34,6 +37,8 @@ app.use('/api/couriers',      couriersRouter)
 app.use('/api/organizations', organizationsRouter)
 app.use('/api/zones',         zonesRouter)
 app.use('/api/dispatch',      dispatchRouter)
+app.use('/api/alerts',        alertsRouter)
+app.use('/track',             publicTrackingRouter)
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
 
@@ -48,6 +53,7 @@ server.listen(PORT, async () => {
   // BullMQ Workers
   startDispatchWorker()
   startOfferExpiryWorker()
+  startAlertWorker()
 
   console.log(`🚀 API  http://localhost:${PORT}`)
   console.log(`🔌 WS   ws://localhost:${PORT}/ws`)
