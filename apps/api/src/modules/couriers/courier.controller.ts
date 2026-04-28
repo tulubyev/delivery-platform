@@ -42,11 +42,11 @@ couriersRouter.get(
             courierId:   courier.id,
             deliveredAt: { gte: from },
           },
-          select: { totalPrice: true, deliveredAt: true, createdAt: true },
+          select: { declaredValue: true, paymentOnDelivery: true, deliveredAt: true, createdAt: true },
         })
         return {
           orders:   orders.length,
-          earnings: orders.reduce((s, o) => s + Number(o.totalPrice ?? 0), 0),
+          earnings: orders.reduce((s, o) => s + Number(o.declaredValue ?? 0) + Number(o.paymentOnDelivery ?? 0), 0),
         }
       }
 
@@ -58,7 +58,7 @@ couriersRouter.get(
 
       // Активные заказы прямо сейчас
       const active = await prisma.order.count({
-        where: { courierId: courier.id, deliveredAt: null, cancelledAt: null },
+        where: { courierId: courier.id, status: { notIn: ['DELIVERED', 'CANCELLED', 'FAILED'] } },
       })
 
       res.json(ok({
@@ -92,7 +92,7 @@ couriersRouter.get(
         where: {
           courierId: courier.id,
           createdAt: { gte: dayStart, lt: dayEnd },
-          cancelledAt: null,
+          status: { notIn: ['CANCELLED', 'FAILED'] },
         },
         include: {
           pickupPoint: { select: { address: true, lat: true, lon: true } },

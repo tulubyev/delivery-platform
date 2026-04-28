@@ -13,10 +13,9 @@ interface Order {
   recipientName: string
   recipientPhone: string
   deliveryAddress: string
-  totalPrice: number | null
+  declaredValue: number | null
   createdAt: string
   deliveredAt: string | null
-  cancelledAt: string | null
   pickupPoint?: { address: string } | null
 }
 
@@ -117,8 +116,8 @@ export function CourierOrdersPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {o.totalPrice != null && (
-                        <span className="text-sm font-semibold text-green-600">{o.totalPrice} ₽</span>
+                      {o.declaredValue != null && (
+                        <span className="text-sm font-semibold text-green-600">{o.declaredValue} ₽</span>
                       )}
                       {expanded === o.id ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
                     </div>
@@ -143,10 +142,10 @@ export function CourierOrdersPage() {
                         <span>Доставлен: {formatDateTime(o.deliveredAt)}</span>
                       </div>
                     )}
-                    {o.cancelledAt && (
+                    {o.status === 'CANCELLED' && (
                       <div className="flex items-center gap-2 text-red-500">
                         <Clock size={13} />
-                        <span>Отменён: {formatDateTime(o.cancelledAt)}</span>
+                        <span>Заказ отменён</span>
                       </div>
                     )}
                   </div>
