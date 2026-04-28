@@ -11,18 +11,29 @@ async function main() {
     where:  { slug: 'lastmiles-demo' },
     update: {},
     create: {
-      name:        'LastMiles Demo',
-      slug:        'lastmiles-demo',
-      timezone:    'Europe/Moscow',
-      smsApiKey:   process.env.SMSRU_API_ID ?? '',
-      smsProvider: 'smsru',
-      config: {
-        slaMinutes:   60,
-        dispatchMode: 'AUTO',
-      },
+      name:    'LastMiles Demo',
+      slug:    'lastmiles-demo',
+      isActive: true,
     },
   })
   console.log('✅ Organization:', org.name, org.id)
+
+  // TenantConfig
+  await prisma.tenantConfig.upsert({
+    where:  { organizationId: org.id },
+    update: {},
+    create: {
+      organizationId:   org.id,
+      slaMinutes:       60,
+      dispatchMode:     'AUTO',
+      smsProvider:      'smsru',
+      smsApiKey:        process.env.SMSRU_API_ID ?? '',
+      twoGisApiKey:     process.env.TWO_GIS_API_KEY ?? '',
+      shiftsEnabled:    true,
+      warehousesEnabled: true,
+    },
+  })
+  console.log('✅ TenantConfig created')
 
   // ── Пользователи ─────────────────────────────────────────────────────────────
   const hash = (pw: string) => bcrypt.hash(pw, 10)
@@ -50,7 +61,7 @@ async function main() {
         role:           u.role,
         passwordHash:   await hash(u.pw),
         organizationId: u.orgId,
-        phoneVerified:  true, // seed-пользователи уже верифицированы
+        phoneVerified:  true,
         isActive:       true,
       },
     })
@@ -89,7 +100,7 @@ async function main() {
   }
 
   // ── Зона доставки ────────────────────────────────────────────────────────────
-  const zone = await prisma.zone.upsert({
+  await prisma.zone.upsert({
     where:  { id: 'seed-zone-central' },
     update: {},
     create: {
@@ -109,10 +120,10 @@ async function main() {
       },
     },
   })
-  console.log('✅ Zone:', zone.name)
+  console.log('✅ Zone: Центр города')
 
   // ── Склад ────────────────────────────────────────────────────────────────────
-  const warehouse = await prisma.warehouse.upsert({
+  await prisma.warehouse.upsert({
     where:  { id: 'seed-warehouse-main' },
     update: {},
     create: {
@@ -125,7 +136,7 @@ async function main() {
       isActive:       true,
     },
   })
-  console.log('✅ Warehouse:', warehouse.name)
+  console.log('✅ Warehouse: Главный склад')
 
   console.log('\n🎉 Seed completed!')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
