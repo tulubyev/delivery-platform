@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Truck, Eye, EyeOff } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -89,6 +89,10 @@ export function LoginPage() {
             </form>
           </CardContent>
         </Card>
+        <p className="text-center text-sm text-slate-500">
+          Нет аккаунта?{' '}
+          <Link to="/register" className="text-blue-600 hover:underline font-medium">Зарегистрироваться</Link>
+        </p>
       </div>
     </div>
   )

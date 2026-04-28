@@ -5,6 +5,7 @@ import { AdminLayout } from '@/layouts/AdminLayout'
 import { SupervisorLayout } from '@/layouts/SupervisorLayout'
 import { ClientLayout } from '@/layouts/ClientLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
+import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { ClientDashboardPage } from '@/pages/client/DashboardPage'
 import { ClientOrdersPage } from '@/pages/client/OrdersPage'
 import { CreateOrderPage } from '@/pages/client/CreateOrderPage'
@@ -36,7 +37,8 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login"    element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* ORG_ADMIN / ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ORG_ADMIN']} />}>
