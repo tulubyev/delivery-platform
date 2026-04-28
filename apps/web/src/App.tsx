@@ -22,6 +22,7 @@ import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
 import { AlertsPage } from '@/pages/supervisor/AlertsPage'
 import { SupervisorCouriersPage } from '@/pages/supervisor/CouriersPage'
+import { CourierAppPage } from '@/pages/courier/CourierAppPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, retry: 1 } },
@@ -68,6 +69,11 @@ export function App() {
               <Route path="/client/new"          element={<CreateOrderPage />} />
               <Route path="/client/docs"         element={<ClientDocsPage />} />
             </Route>
+          </Route>
+
+          {/* COURIER — только мобильное приложение */}
+          <Route element={<ProtectedRoute allowedRoles={['COURIER']} />}>
+            <Route path="/courier" element={<CourierAppPage />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/login" replace />} />
