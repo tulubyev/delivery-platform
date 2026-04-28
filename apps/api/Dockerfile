@@ -32,4 +32,4 @@ RUN mkdir -p /app/uploads
 EXPOSE 3000
 WORKDIR /app/apps/api
 
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/app.js"]
+CMD ["sh", "-c", "/app/node_modules/.bin/prisma migrate deploy && node dist/app.js"]
