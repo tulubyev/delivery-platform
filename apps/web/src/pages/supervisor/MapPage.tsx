@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useOnlineCouriers } from '@/queries/couriers'
+import { useOnlineCouriers, Courier } from '@/queries/couriers'
 import { useAlerts } from '@/queries/alerts'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -41,9 +41,8 @@ export function MapPage() {
   // Добавляем маркеры курьеров
   useEffect(() => {
     // @ts-ignore
-    if (!mapReady || !mapObjRef.current || !window.mapgl || !couriers?.items) return
-    // @ts-ignore
-    couriers.items.forEach((c: { currentLon?: number; currentLat?: number; name?: string }) => {
+    if (!mapReady || !mapObjRef.current || !window.mapgl || !couriers) return
+    couriers.forEach((c: Courier) => {
       if (!c.currentLon || !c.currentLat) return
       // @ts-ignore
       new window.mapgl.Marker(mapObjRef.current, {
@@ -52,7 +51,7 @@ export function MapPage() {
     })
   }, [mapReady, couriers])
 
-  const criticalCount = alerts?.items.filter((a: { severity: string }) => a.severity === 'CRITICAL').length ?? 0
+  const criticalCount = alerts?.items?.filter((a: { severity: string }) => a.severity === 'CRITICAL').length ?? 0
 
   return (
     <div className="flex h-full">
@@ -71,10 +70,7 @@ export function MapPage() {
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {isLoading && <p className="text-sm text-slate-400 text-center py-4">Загрузка...</p>}
-          {couriers?.items?.map((c: {
-            id: string; name: string; isOnline: boolean
-            lastSeenAt?: string; currentLat?: number; currentLon?: number
-          }) => (
+          {couriers?.map((c: Courier) => (
             <Card
               key={c.id}
               className={`cursor-pointer transition-colors ${selected === c.id ? 'ring-2 ring-blue-500' : ''}`}
@@ -85,7 +81,7 @@ export function MapPage() {
                   <Truck size={14} className={c.isOnline ? 'text-green-600' : 'text-slate-400'} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">{c.name}</p>
+                  <p className="truncate text-sm font-medium text-slate-900">{c.user.name}</p>
                   <p className="text-xs text-slate-400">
                     {c.isOnline
                       ? <span className="flex items-center gap-1 text-green-600"><Wifi size={10} />Онлайн</span>
