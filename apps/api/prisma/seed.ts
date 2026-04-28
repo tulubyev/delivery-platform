@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, CourierType, CourierStatus, VerificationStatus } from '@prisma/client'
+import { PrismaClient, UserRole, CourierType, VehicleType, VerificationStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -76,9 +76,9 @@ async function main() {
           userId:             user.id,
           organizationId:     u.orgId,
           type:               CourierType.STAFF,
-          status:             CourierStatus.OFFLINE,
+          vehicleType:        VehicleType.BIKE,
           verificationStatus: VerificationStatus.APPROVED,
-          vehicle:            'bicycle',
+          isOnline:           false,
           rating:             4.8,
         },
       })
