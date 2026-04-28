@@ -21,7 +21,10 @@ paymentsRouter.post(
         returnUrl:   z.string().url().optional(),
       }).parse(req.body)
       res.status(201).json(ok(await paymentService.initiatePayment({
-        ...body,
+        orderId:        body.orderId,
+        amount:         body.amount,
+        description:    body.description,
+        returnUrl:      body.returnUrl,
         organizationId: req.user!.organizationId!,
       })))
     } catch (e) { next(e) }

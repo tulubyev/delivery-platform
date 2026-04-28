@@ -4,13 +4,14 @@ WORKDIR /app
 
 # ── deps: только манифесты для кэша слоёв ─────────────────────────────────
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json         apps/api/
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ── builder ────────────────────────────────────────────────────────────────
 FROM deps AS builder
+COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY apps/api         apps/api
 # Prisma client генерируется до TypeScript сборки

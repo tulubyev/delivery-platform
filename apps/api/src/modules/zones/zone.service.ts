@@ -39,7 +39,7 @@ export const zoneService = {
       data: {
         organizationId: orgId,
         name:           dto.name,
-        polygon:        dto.polygon,
+        polygon:        dto.polygon as object,
         basePrice:      dto.basePrice ?? 0,
         pricePerKm:     dto.pricePerKm ?? 0,
         maxDeliveryMin: dto.maxDeliveryMin ?? 60,
@@ -62,7 +62,7 @@ export const zoneService = {
 
   async update(id: string, orgId: string, dto: UpdateZoneDto) {
     await this.getById(id, orgId)
-    return prisma.zone.update({ where: { id }, data: dto })
+    return prisma.zone.update({ where: { id }, data: { ...dto, polygon: dto.polygon as object | undefined } })
   },
 
   async delete(id: string, orgId: string) {

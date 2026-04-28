@@ -22,7 +22,7 @@ notificationsRouter.post(
         endpoint: z.string().url(),
         keys:     z.object({ p256dh: z.string(), auth: z.string() }),
       }).parse(req.body)
-      await notificationService.saveWebSubscription(req.user!.sub, sub)
+      await notificationService.saveWebSubscription(req.user!.sub, sub as { endpoint: string; keys: { p256dh: string; auth: string } })
       res.json(ok({ subscribed: true }))
     } catch (e) { next(e) }
   },
