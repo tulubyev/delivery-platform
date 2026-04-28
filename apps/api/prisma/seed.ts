@@ -92,8 +92,8 @@ async function main() {
         create: {
           userId:         user.id,
           organizationId: u.orgId,
-          companyName:    'ООО Ромашка',
-          contractNumber: 'CTR-2026-001',
+          companyName: 'ООО Ромашка',
+          contractNo:  'CTR-2026-001',
         },
       })
     }
