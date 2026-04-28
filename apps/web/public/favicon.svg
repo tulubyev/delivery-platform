@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Фон: синий скруглённый квадрат -->
+  <rect width="32" height="32" rx="7" fill="#2563eb"/>
+
+  <!-- Кузов грузовика -->
+  <rect x="4" y="11" width="16" height="10" rx="1.5" fill="white"/>
+
+  <!-- Кабина -->
+  <path d="M20 14 L20 21 L27 21 L27 17 L24 14 Z" fill="white"/>
+
+  <!-- Окно кабины -->
+  <path d="M21 15 L21 17.5 L25.5 17.5 L25.5 17 L23.5 15 Z" fill="#2563eb"/>
+
+  <!-- Колёса -->
+  <circle cx="9"  cy="22" r="2.5" fill="white"/>
+  <circle cx="9"  cy="22" r="1.2" fill="#2563eb"/>
+  <circle cx="23" cy="22" r="2.5" fill="white"/>
+  <circle cx="23" cy="22" r="1.2" fill="#2563eb"/>
+</svg>
