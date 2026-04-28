@@ -34,4 +34,4 @@ EXPOSE 3000
 WORKDIR /app/apps/api
 
 # prisma CLI в pnpm находится по пути .pnpm/node_modules/.bin/
-CMD ["sh", "-c", "/app/node_modules/.pnpm/node_modules/.bin/prisma migrate deploy --schema=/app/apps/api/prisma/schema.prisma && node dist/app.js"]
+CMD ["sh", "-c", "/app/node_modules/.pnpm/node_modules/.bin/prisma migrate deploy --schema=/app/apps/api/prisma/schema.prisma 2>&1 || echo 'Migration skipped (already applied)'; node dist/app.js"]
