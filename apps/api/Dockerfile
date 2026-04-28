@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY packages/shared packages/shared
 COPY apps/api         apps/api
 RUN pnpm --filter api exec prisma generate
-RUN pnpm --filter @delivery/shared build || true
+RUN pnpm --filter @delivery/shared build
 RUN pnpm --filter api build
 
 # ── runner ─────────────────────────────────────────────────────────────────
