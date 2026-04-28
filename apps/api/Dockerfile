@@ -17,6 +17,7 @@ RUN pnpm --filter api build
 
 # ── runner ─────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 ENV NODE_ENV=production PORT=3000
 WORKDIR /app
 
