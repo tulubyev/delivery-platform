@@ -20,11 +20,12 @@ FROM node:20-alpine AS runner
 ENV NODE_ENV=production PORT=3000
 WORKDIR /app
 
-# Берём готовый node_modules из builder (включает prisma client)
-COPY --from=builder /app/node_modules       node_modules
-COPY --from=builder /app/packages           packages
-COPY --from=builder /app/apps/api/dist      apps/api/dist
-COPY --from=builder /app/apps/api/prisma    apps/api/prisma
+# Берём готовый node_modules из builder (включает prisma client + CLI)
+COPY --from=builder /app/node_modules              node_modules
+COPY --from=builder /app/apps/api/node_modules     apps/api/node_modules
+COPY --from=builder /app/packages                  packages
+COPY --from=builder /app/apps/api/dist             apps/api/dist
+COPY --from=builder /app/apps/api/prisma           apps/api/prisma
 COPY package.json pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 
@@ -32,4 +33,5 @@ RUN mkdir -p /app/uploads
 EXPOSE 3000
 WORKDIR /app/apps/api
 
-CMD ["sh", "-c", "/app/node_modules/.bin/prisma migrate deploy && node dist/app.js"]
+# prisma CLI живёт в apps/api/node_modules/.bin/ (pnpm workspace)
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node dist/app.js"]
