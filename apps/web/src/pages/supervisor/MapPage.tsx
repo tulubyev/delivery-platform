@@ -6,27 +6,51 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Truck, AlertTriangle, Wifi } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 
-// 2GIS MapGL будет подключён через CDN в index.html
-// Здесь заглушка с курьерами в списке — карта подключается отдельно
+const TWOGIS_KEY = import.meta.env.VITE_TWOGIS_API_KEY ?? ''
 
 export function MapPage() {
   const { data: couriers, isLoading } = useOnlineCouriers()
   const { data: alerts } = useAlerts({ resolved: false })
-  const mapRef = useRef<HTMLDivElement>(null)
+  const mapRef    = useRef<HTMLDivElement>(null)
+  const mapObjRef = useRef<unknown>(null)
+  const [mapReady, setMapReady] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
 
-  // Инициализация 2GIS карты (подключается через window.mapgl)
+  // Инициализация 2GIS карты
+  useEffect(() => {
+    if (!mapRef.current || !TWOGIS_KEY) return
+
+    let cancelled = false
+    const tryInit = () => {
+      // @ts-ignore
+      if (!window.mapgl) { setTimeout(tryInit, 200); return }
+      if (cancelled || !mapRef.current) return
+      // @ts-ignore
+      const map = new window.mapgl.Map(mapRef.current, {
+        center: [37.6176, 55.7558], // Москва по умолчанию
+        zoom:   11,
+        key:    TWOGIS_KEY,
+      })
+      mapObjRef.current = map
+      setMapReady(true)
+    }
+    tryInit()
+    return () => { cancelled = true }
+  }, [])
+
+  // Добавляем маркеры курьеров
   useEffect(() => {
     // @ts-ignore
-    if (!window.mapgl || !mapRef.current) return
+    if (!mapReady || !mapObjRef.current || !window.mapgl || !couriers?.items) return
     // @ts-ignore
-    const map = new window.mapgl.Map(mapRef.current, {
-      center: [82.9201, 55.0302], // Новосибирск по умолчанию
-      zoom:   12,
-      key:    import.meta.env.VITE_TWOGIS_API_KEY ?? '',
+    couriers.items.forEach((c: { currentLon?: number; currentLat?: number; name?: string }) => {
+      if (!c.currentLon || !c.currentLat) return
+      // @ts-ignore
+      new window.mapgl.Marker(mapObjRef.current, {
+        coordinates: [c.currentLon, c.currentLat],
+      })
     })
-    return () => map.destroy()
-  }, [])
+  }, [mapReady, couriers])
 
   const criticalCount = alerts?.items.filter((a: { severity: string }) => a.severity === 'CRITICAL').length ?? 0
 
@@ -34,69 +58,57 @@ export function MapPage() {
     <div className="flex h-full">
       {/* Sidebar */}
       <aside className="flex w-72 flex-col border-r border-slate-200 bg-white">
-        {/* Header */}
         <div className="border-b border-slate-100 p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">Онлайн курьеры</h2>
-            <Badge variant={couriers?.length ? 'success' : 'default'}>{couriers?.length ?? 0}</Badge>
+            {criticalCount > 0 && (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle size={12} /> {criticalCount}
+              </Badge>
+            )}
           </div>
-          {criticalCount > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertTriangle size={14} />
-              {criticalCount} критических алерта
-            </div>
-          )}
         </div>
 
-        {/* Courier list */}
-        <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-4 text-sm text-slate-400">Загрузка...</div>
-          ) : !couriers?.length ? (
-            <div className="flex flex-col items-center gap-2 p-8 text-slate-400">
-              <Truck size={32} />
-              <p className="text-sm">Нет онлайн курьеров</p>
-            </div>
-          ) : (
-            couriers.map(c => (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c.id === selected ? null : c.id)}
-                className={`w-full border-b border-slate-50 p-3 text-left transition-colors hover:bg-slate-50 ${selected === c.id ? 'bg-blue-50' : ''}`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${c.isOnline ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                    <Truck size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{c.user.name}</p>
-                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                      <Wifi size={10} className={c.isOnline ? 'text-green-500' : 'text-slate-300'} />
-                      {c.lastSeenAt ? formatDateTime(c.lastSeenAt) : 'Нет данных'}
-                    </div>
-                  </div>
-                  <div className="ml-auto">
-                    <Badge variant={c.vehicleType === 'CAR' ? 'primary' : 'default'} className="text-[10px]">
-                      {c.vehicleType}
-                    </Badge>
-                  </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {isLoading && <p className="text-sm text-slate-400 text-center py-4">Загрузка...</p>}
+          {couriers?.items?.map((c: {
+            id: string; name: string; isOnline: boolean
+            lastSeenAt?: string; currentLat?: number; currentLon?: number
+          }) => (
+            <Card
+              key={c.id}
+              className={`cursor-pointer transition-colors ${selected === c.id ? 'ring-2 ring-blue-500' : ''}`}
+              onClick={() => setSelected(c.id)}
+            >
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${c.isOnline ? 'bg-green-100' : 'bg-slate-100'}`}>
+                  <Truck size={14} className={c.isOnline ? 'text-green-600' : 'text-slate-400'} />
                 </div>
-              </button>
-            ))
-          )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-900">{c.name}</p>
+                  <p className="text-xs text-slate-400">
+                    {c.isOnline
+                      ? <span className="flex items-center gap-1 text-green-600"><Wifi size={10} />Онлайн</span>
+                      : c.lastSeenAt ? formatDateTime(c.lastSeenAt) : 'Офлайн'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </aside>
 
-      {/* Map container */}
+      {/* Map */}
       <div className="relative flex-1 bg-slate-100">
         <div ref={mapRef} className="h-full w-full" />
-        {/* Placeholder until 2GIS loads */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-400 pointer-events-none">
-          <div className="rounded-xl bg-white/80 px-6 py-4 text-center shadow-sm backdrop-blur">
-            <p className="font-medium text-slate-700">Карта 2GIS</p>
-            <p className="mt-1 text-sm">Подключите VITE_TWOGIS_API_KEY в .env</p>
+        {!TWOGIS_KEY && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="rounded-xl bg-white/90 px-6 py-4 text-center shadow">
+              <p className="font-medium text-slate-700">Карта 2GIS</p>
+              <p className="mt-1 text-sm text-slate-400">Задайте VITE_TWOGIS_API_KEY при сборке</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
