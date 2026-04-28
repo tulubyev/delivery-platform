@@ -62,6 +62,8 @@
       ]
     ],
     "extra": {
+      "apiUrl": "https://api.lastmiles.ru/api",
+      "wsUrl":  "wss://api.lastmiles.ru/ws",
       "eas": {
         "projectId": "YOUR_EAS_PROJECT_ID"
       }
