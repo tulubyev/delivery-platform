@@ -36,7 +36,13 @@ import { dispatchQueue } from './infrastructure/queue/queues'
 const app = express()
 
 app.use(helmet())
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') ?? '*', credentials: true }))
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) ?? []
+app.use(cors({
+  origin: allowedOrigins.length > 0
+    ? (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin))
+    : true,
+  credentials: true,
+}))
 
 // YooKassa webhook нужен raw body ДО express.json()
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }))
