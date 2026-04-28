@@ -16,25 +16,42 @@ export function MapPage() {
   const [mapReady, setMapReady] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
 
-  // Инициализация 2GIS карты
+  // Инициализация 2GIS карты с автолокацией
   useEffect(() => {
     if (!mapRef.current || !TWOGIS_KEY) return
 
     let cancelled = false
-    const tryInit = () => {
+
+    const initMap = (center: [number, number]) => {
       // @ts-ignore
-      if (!window.mapgl) { setTimeout(tryInit, 200); return }
+      if (!window.mapgl) { setTimeout(() => initMap(center), 200); return }
       if (cancelled || !mapRef.current) return
       // @ts-ignore
-      const map = new window.mapgl.Map(mapRef.current, {
-        center: [37.6176, 55.7558], // Москва по умолчанию
-        zoom:   11,
-        key:    TWOGIS_KEY,
-      })
+      const map = new window.mapgl.Map(mapRef.current, { center, zoom: 11, key: TWOGIS_KEY })
       mapObjRef.current = map
       setMapReady(true)
     }
-    tryInit()
+
+    const defaultCenter: [number, number] = [37.6176, 55.7558] // Москва
+
+    // 1. Пробуем GPS
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => !cancelled && initMap([pos.coords.longitude, pos.coords.latitude]),
+        () => {
+          // 2. Fallback: IP геолокация
+          fetch('https://ipapi.co/json/')
+            .then(r => r.json())
+            .then((d: { longitude?: number; latitude?: number }) =>
+              !cancelled && initMap(d.longitude && d.latitude ? [d.longitude, d.latitude] : defaultCenter))
+            .catch(() => !cancelled && initMap(defaultCenter))
+        },
+        { timeout: 5000 },
+      )
+    } else {
+      initMap(defaultCenter)
+    }
+
     return () => { cancelled = true }
   }, [])
 
