@@ -39,7 +39,7 @@ export function ClientDocsPage() {
       <Card className="border-blue-100 bg-blue-50">
         <CardContent className="p-4">
           <p className="text-sm text-blue-800 font-medium">Нужна помощь?</p>
-          <p className="mt-1 text-sm text-blue-700">Свяжитесь с вашим менеджером или напишите на <a href="mailto:support@delivery.ru" className="underline">support@delivery.ru</a></p>
+          <p className="mt-1 text-sm text-blue-700">Свяжитесь с вашим менеджером или напишите на <a href="mailto:admin@lastmiles.ru" className="underline">admin@lastmiles.ru</a></p>
         </CardContent>
       </Card>
     </div>
