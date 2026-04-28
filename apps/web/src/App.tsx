@@ -22,7 +22,10 @@ import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
 import { AlertsPage } from '@/pages/supervisor/AlertsPage'
 import { SupervisorCouriersPage } from '@/pages/supervisor/CouriersPage'
-import { CourierAppPage } from '@/pages/courier/CourierAppPage'
+import { CourierLayout } from '@/layouts/CourierLayout'
+import { CourierDashboardPage } from '@/pages/courier/DashboardPage'
+import { CourierOrdersPage } from '@/pages/courier/OrdersPage'
+import { CourierPlanPage } from '@/pages/courier/PlanPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, retry: 1 } },
@@ -71,9 +74,13 @@ export function App() {
             </Route>
           </Route>
 
-          {/* COURIER — только мобильное приложение */}
+          {/* COURIER */}
           <Route element={<ProtectedRoute allowedRoles={['COURIER']} />}>
-            <Route path="/courier" element={<CourierAppPage />} />
+            <Route element={<CourierLayout />}>
+              <Route path="/courier"        element={<CourierDashboardPage />} />
+              <Route path="/courier/orders" element={<CourierOrdersPage />} />
+              <Route path="/courier/plan"   element={<CourierPlanPage />} />
+            </Route>
           </Route>
 
           <Route path="/" element={<Navigate to="/login" replace />} />

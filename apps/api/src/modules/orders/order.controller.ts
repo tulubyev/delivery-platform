@@ -24,7 +24,7 @@ ordersRouter.post(
 ordersRouter.get(
   '/',
   authenticate,
-  authorize('ADMIN', 'ORG_ADMIN', 'SUPERVISOR', 'CLIENT'),
+  authorize('ADMIN', 'ORG_ADMIN', 'SUPERVISOR', 'CLIENT', 'COURIER'),
   async (req, res, next) => {
     try {
       const filters = OrderFiltersSchema.parse(req.query)
@@ -35,6 +35,13 @@ ordersRouter.get(
           m.prisma.client.findUnique({ where: { userId: req.user!.sub } })
         )
         if (client) filters.clientId = client.id
+      }
+      // COURIER видит только свои заказы
+      if (req.user!.role === 'COURIER') {
+        const courier = await import('../../infrastructure/db/prisma').then(m =>
+          m.prisma.courier.findUnique({ where: { userId: req.user!.sub } })
+        )
+        if (courier) filters.courierId = courier.id
       }
       res.json(ok(await orderService.list(orgId, filters)))
     } catch (e) { next(e) }
