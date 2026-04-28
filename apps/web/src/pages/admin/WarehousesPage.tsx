@@ -82,9 +82,12 @@ export function WarehousesPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ name: '', address: '', lat: '', lon: '', phone: '' })
 
-  const { data, isLoading } = useQuery<{ items: WarehouseItem[] }>({
+  const { data, isLoading } = useQuery<WarehouseItem[]>({
     queryKey: ['warehouses'],
-    queryFn: async () => { const { data } = await api.get('/warehouses'); return data.data },
+    queryFn: async () => {
+      const { data } = await api.get('/warehouses')
+      return Array.isArray(data.data) ? data.data : data.data.items ?? []
+    },
   })
 
   const create = useMutation({
@@ -120,8 +123,8 @@ export function WarehousesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {data?.items.map(w => <WarehouseCard key={w.id} w={w} />)}
-          {!data?.items.length && (
+          {data?.map(w => <WarehouseCard key={w.id} w={w} />)}
+          {!data?.length && (
             <div className="col-span-3 py-16 text-center text-slate-400">Склады не добавлены</div>
           )}
         </div>

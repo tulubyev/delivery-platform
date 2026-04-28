@@ -38,11 +38,11 @@ export function ShiftsPage() {
 
   const [form, setForm] = useState({ courierId: '', zoneId: '', scheduledStart: '', scheduledEnd: '' })
 
-  const { data: shifts, isLoading } = useQuery<{ items: Shift[]; total: number }>({
+  const { data: shifts, isLoading } = useQuery<Shift[]>({
     queryKey: ['shifts', date, page],
     queryFn: async () => {
       const { data } = await api.get('/shifts', { params: { date, page, limit: 20 } })
-      return data.data
+      return Array.isArray(data.data) ? data.data : data.data.items ?? []
     },
   })
 
@@ -68,7 +68,7 @@ export function ShiftsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Смены</h1>
-          <p className="text-sm text-slate-500">{shifts?.total ?? 0} всего</p>
+          <p className="text-sm text-slate-500">{shifts?.length ?? 0} всего</p>
         </div>
         <Button size="sm" onClick={() => setShowCreate(true)}>
           <Plus size={16} />Создать смену
@@ -96,7 +96,7 @@ export function ShiftsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {shifts?.items.map(s => {
+                  {shifts?.map(s => {
                     const st = STATUS_MAP[s.status]
                     return (
                       <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50">
@@ -114,18 +114,18 @@ export function ShiftsPage() {
                       </tr>
                     )
                   })}
-                  {!shifts?.items.length && (
+                  {!shifts?.length && (
                     <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">Смены не найдены</td></tr>
                   )}
                 </tbody>
               </table>
 
-              {shifts && shifts.total > 20 && (
+              {shifts && shifts.length >= 20 && (
                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-                  <span className="text-sm text-slate-500">Страница {page} из {Math.ceil(shifts.total / 20)}</span>
+                  <span className="text-sm text-slate-500">Страница {page}</span>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Назад</Button>
-                    <Button variant="outline" size="sm" disabled={page * 20 >= shifts.total} onClick={() => setPage(p => p + 1)}>Далее</Button>
+                    <Button variant="outline" size="sm" disabled={shifts.length < 20} onClick={() => setPage(p => p + 1)}>Далее</Button>
                   </div>
                 </div>
               )}

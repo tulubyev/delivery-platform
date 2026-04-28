@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { Search, Filter, Plus } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useOrders } from '@/queries/orders'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateTime } from '@/lib/utils'
 
@@ -21,9 +24,155 @@ const STATUS_MAP: Record<string, { label: string; variant: 'default'|'primary'|'
 
 const STATUSES = Object.entries(STATUS_MAP)
 
+interface Client { id: string; name: string }
+
+const emptyForm = {
+  recipientName:  '',
+  recipientPhone: '+7',
+  pickupCity:     'Москва',
+  pickupStreet:   '',
+  pickupBuilding: '',
+  deliveryCity:   'Москва',
+  deliveryStreet: '',
+  deliveryBuilding: '',
+  deliveryApartment: '',
+  declaredValue:  '',
+  notes:          '',
+  clientId:       '',
+}
+
+function CreateOrderModal({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient()
+  const [form, setForm] = useState(emptyForm)
+  const [error, setError] = useState('')
+
+  const { data: clients } = useQuery<Client[]>({
+    queryKey: ['clients-select'],
+    queryFn: async () => {
+      const { data } = await api.get('/users', { params: { role: 'CLIENT', limit: 100 } })
+      return (data.data?.items ?? data.data ?? []).map((u: { id: string; name: string }) => ({ id: u.id, name: u.name }))
+    },
+  })
+
+  const create = useMutation({
+    mutationFn: () => api.post('/orders', {
+      clientId: form.clientId,
+      recipientName: form.recipientName,
+      recipientPhone: form.recipientPhone,
+      pickupAddress: {
+        city: form.pickupCity,
+        street: form.pickupStreet,
+        building: form.pickupBuilding,
+      },
+      deliveryAddress: {
+        city: form.deliveryCity,
+        street: form.deliveryStreet,
+        building: form.deliveryBuilding,
+        apartment: form.deliveryApartment || undefined,
+      },
+      declaredValue: form.declaredValue ? parseFloat(form.declaredValue) : undefined,
+      notes: form.notes || undefined,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] })
+      onClose()
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Ошибка создания заказа'
+      setError(msg)
+    },
+  })
+
+  const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm(p => ({ ...p, [k]: e.target.value }))
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-slate-900">Новый заказ</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Клиент */}
+          <div>
+            <Label>Клиент</Label>
+            <select className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={form.clientId} onChange={f('clientId')}>
+              <option value="">Выберите клиента</option>
+              {clients?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          {/* Получатель */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Имя получателя</Label>
+              <Input className="mt-1" placeholder="Иван Иванов" value={form.recipientName} onChange={f('recipientName')} />
+            </div>
+            <div>
+              <Label>Телефон получателя</Label>
+              <Input className="mt-1" placeholder="+79001234567" value={form.recipientPhone} onChange={f('recipientPhone')} />
+            </div>
+          </div>
+
+          {/* Адрес отправки */}
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">Адрес отправки (откуда)</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Input placeholder="Город" value={form.pickupCity} onChange={f('pickupCity')} />
+              <Input placeholder="Улица" value={form.pickupStreet} onChange={f('pickupStreet')} />
+              <Input placeholder="Дом" value={form.pickupBuilding} onChange={f('pickupBuilding')} />
+            </div>
+          </div>
+
+          {/* Адрес доставки */}
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">Адрес доставки (куда)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Город" value={form.deliveryCity} onChange={f('deliveryCity')} />
+              <Input placeholder="Улица" value={form.deliveryStreet} onChange={f('deliveryStreet')} />
+              <Input placeholder="Дом" value={form.deliveryBuilding} onChange={f('deliveryBuilding')} />
+              <Input placeholder="Квартира (необязательно)" value={form.deliveryApartment} onChange={f('deliveryApartment')} />
+            </div>
+          </div>
+
+          {/* Доп. поля */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Объявленная стоимость (₽)</Label>
+              <Input className="mt-1" type="number" placeholder="0" value={form.declaredValue} onChange={f('declaredValue')} />
+            </div>
+          </div>
+          <div>
+            <Label>Примечание</Label>
+            <textarea
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={2} placeholder="Хрупкое, не переворачивать..." value={form.notes}
+              onChange={f('notes')}
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+
+        <div className="flex gap-3 p-6 pt-0">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Отмена</Button>
+          <Button className="flex-1" onClick={() => create.mutate()}
+            disabled={!form.clientId || !form.recipientName || !form.recipientPhone || !form.pickupStreet || !form.deliveryStreet || create.isPending}>
+            {create.isPending ? 'Создание...' : 'Создать заказ'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function OrdersPage() {
   const [status, setStatus] = useState<string | undefined>()
   const [page, setPage] = useState(1)
+  const [showCreate, setShowCreate] = useState(false)
 
   const { data, isLoading } = useOrders({ status, page, limit: 20 })
 
@@ -34,7 +183,9 @@ export function OrdersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Заказы</h1>
           <p className="text-sm text-slate-500">{data?.total ?? 0} всего</p>
         </div>
-        <Button size="sm"><Plus size={16} />Новый заказ</Button>
+        <Button size="sm" onClick={() => setShowCreate(true)}>
+          <Plus size={16} />Новый заказ
+        </Button>
       </div>
 
       {/* Filters */}
@@ -79,7 +230,7 @@ export function OrdersPage() {
                         <td className="px-4 py-3 font-mono font-medium text-blue-600">#{o.number}</td>
                         <td className="px-4 py-3"><Badge variant={s?.variant}>{s?.label ?? o.status}</Badge></td>
                         <td className="px-4 py-3 text-slate-600 max-w-xs truncate">
-                          {typeof o.deliveryAddress === 'object' ? Object.values(o.deliveryAddress).join(', ') : '—'}
+                          {typeof o.deliveryAddress === 'object' ? Object.values(o.deliveryAddress).filter(Boolean).join(', ') : '—'}
                         </td>
                         <td className="px-4 py-3">
                           {o.slaDeadlineAt
@@ -96,7 +247,6 @@ export function OrdersPage() {
                 </tbody>
               </table>
 
-              {/* Pagination */}
               {data && data.total > 20 && (
                 <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
                   <span className="text-sm text-slate-500">Страница {page} из {Math.ceil(data.total / 20)}</span>
@@ -110,6 +260,8 @@ export function OrdersPage() {
           )}
         </CardContent>
       </Card>
+
+      {showCreate && <CreateOrderModal onClose={() => setShowCreate(false)} />}
     </div>
   )
 }
