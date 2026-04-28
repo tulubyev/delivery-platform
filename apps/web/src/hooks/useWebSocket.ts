@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useAuthStore } from '../stores/auth.store'
 import type { WsServerEvents, WsClientEvents } from '@delivery/shared'
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000/ws'
+const WS_URL = import.meta.env.VITE_WS_URL ?? 'wss://api.lastmiles.ru/ws'
 
 export function useWebSocket(onMessage: (event: WsServerEvents) => void) {
   const wsRef = useRef<WebSocket | null>(null)

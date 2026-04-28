@@ -26,8 +26,14 @@ export const trackingService = {
     // 3. Кэш в Redis (5 мин TTL)
     await redis.setex(LOC_KEY(courierId), 300, JSON.stringify({ lat, lon, speed, heading, ts: ts.getTime() }))
 
-    // 4. Pub/Sub — рассылаем всем подписчикам канала courier:{id}
+    // 4. Pub/Sub — рассылаем подписчикам канала courier:{id}
     await redis.publish(COURIER_CHAN(courierId), JSON.stringify({ type: 'COURIER_LOCATION', payload: point }))
+
+    // 5а. Pub/Sub — рассылаем в org-канал (для супервизора, подписанного на SUBSCRIBE_ORG)
+    const courierWithOrg = await prisma.courier.findUnique({ where: { id: courierId }, select: { organizationId: true } })
+    if (courierWithOrg?.organizationId) {
+      await redis.publish(`org:${courierWithOrg.organizationId}`, JSON.stringify({ type: 'COURIER_LOCATION', payload: point }))
+    }
 
     // 5. ETA: пересчитываем для активного заказа курьера
     await this._recalcEta(courierId, lat, lon)
