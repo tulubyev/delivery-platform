@@ -93,6 +93,12 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@react-native-async-storage/async-storage':
+        specifier: 2.2.0
+        version: 2.2.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))
+      '@react-native-community/netinfo':
+        specifier: 11.4.1
+        version: 11.4.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))
       '@react-navigation/bottom-tabs':
         specifier: ^7.15.10
         version: 7.15.10(@react-navigation/native@7.2.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0))(react-native-safe-area-context@5.6.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0))(react-native-screens@4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0)
@@ -102,9 +108,15 @@ importers:
       '@react-navigation/native-stack':
         specifier: ^7.14.12
         version: 7.14.12(@react-navigation/native@7.2.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0))(react-native-safe-area-context@5.6.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0))(react-native-screens@4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))(react@19.1.0)
+      '@tanstack/query-async-storage-persister':
+        specifier: ^5.100.6
+        version: 5.100.6
       '@tanstack/react-query':
         specifier: ^5.100.5
         version: 5.100.5(react@19.1.0)
+      '@tanstack/react-query-persist-client':
+        specifier: ^5.100.6
+        version: 5.100.6(@tanstack/react-query@5.100.5(react@19.1.0))(react@19.1.0)
       axios:
         specifier: ^1.15.2
         version: 1.15.2
@@ -1768,6 +1780,16 @@ packages:
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
 
+  '@react-native-async-storage/async-storage@2.2.0':
+    resolution: {integrity: sha512-gvRvjR5JAaUZF8tv2Kcq/Gbt3JHwbKFYfmb445rhOj6NUMx3qPLixmDx5pZAyb9at1bYvJ4/eTUipU5aki45xw==}
+    peerDependencies:
+      react-native: ^0.0.0-0 || >=0.65 <1.0
+
+  '@react-native-community/netinfo@11.4.1':
+    resolution: {integrity: sha512-B0BYAkghz3Q2V09BF88RA601XursIEA111tnc2JOaN7axJWmNefmfjZqw/KdSxKZp7CZUuPpjBmz/WCR9uaHYg==}
+    peerDependencies:
+      react-native: '>=0.59'
+
   '@react-native/assets-registry@0.81.5':
     resolution: {integrity: sha512-705B6x/5Kxm1RKRvSv0ADYWm5JOnoiQ1ufW7h8uu2E6G9Of/eE6hP/Ivw3U5jI16ERqZxiKQwk34VJbB0niX9w==}
     engines: {node: '>= 20.19.4'}
@@ -2122,8 +2144,23 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/query-async-storage-persister@5.100.6':
+    resolution: {integrity: sha512-DrAqV6IeYbHWr0MuFo5FcK3ewPPMDZPX1hn7Qllm+cL4khSpB4CWm1xbClXfTmwUVLoRD7i7FxQRZKWn93NgJw==}
+
   '@tanstack/query-core@5.100.5':
     resolution: {integrity: sha512-t20KrhKkf0HXzqQkPbJ5erhFesup68BAbwFgYmTrS7bxMF7O5MdmL8jUkik4thsG7Hg00fblz30h6yF1d5TxGg==}
+
+  '@tanstack/query-core@5.100.6':
+    resolution: {integrity: sha512-Os2CPUr98to98RYm+D4qGqGkiffn7MGSyl2547a4MljVkHE30AMJRqTiyCqBfMwzAx/I91vCkAxp5tHSla6Twg==}
+
+  '@tanstack/query-persist-client-core@5.100.6':
+    resolution: {integrity: sha512-SLJXsn5x2XAwKgOVulBFh0KXop7zeDoRmmB7ImKODLflyBnvLBmPQPadmwTgBiZQUa/Kx/y1MxzAXC/4Nfg8kQ==}
+
+  '@tanstack/react-query-persist-client@5.100.6':
+    resolution: {integrity: sha512-WHklDX+U1C/dofiEBNxhk3eWKVEcOWmREPgim3PMqTlXJLewQ5NTqoyQjrnCKuXQIwjDrFd8ZpTbAtt7GRldhw==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.100.6
+      react: ^18 || ^19
 
   '@tanstack/react-query@5.100.5':
     resolution: {integrity: sha512-aNwj1mi2v2bQ9IxkyR1grLOUkv3BYWoykHy9KDyLNbjC3tsahbOHJibK+Wjtr1wRhG59/AvJhiJG5OlthaCgJA==}
@@ -3249,6 +3286,10 @@ packages:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
 
+  is-plain-obj@2.1.0:
+    resolution: {integrity: sha512-YWnfyRwxL/+SsrWYfOpUtz5b3YD+nyfkHvjbcanzk8zgyO4ASD67uVMRt8k5bM4lLMDnXfriRhOpemw+NfT1eA==}
+    engines: {node: '>=8'}
+
   is-regex@1.2.1:
     resolution: {integrity: sha512-MjYsKHO5O7mCsmRGxWcLWheFqN9DJ/2TmngvjKXihe6efViPqc274+Fx/4fYj/r03+ESvBdTXK0V6tA3rgez1g==}
     engines: {node: '>= 0.4'}
@@ -3527,6 +3568,10 @@ packages:
 
   merge-descriptors@1.0.3:
     resolution: {integrity: sha512-gaNvAS7TZ897/rVaZ0nMtAyxNyi/pdbjbAwUpFQpN70GqnVfOiXpeUUMKRBmzXaSQ8DdTX4/0ms62r2K+hE6mQ==}
+
+  merge-options@3.0.4:
+    resolution: {integrity: sha512-2Sug1+knBjkaMsMgf1ctR1Ujx+Ayku4EdJN4Z+C2+JzoeF7A3OZ9KM2GY0CpQS51NR61LTurMJrRKPhSs3ZRTQ==}
+    engines: {node: '>=10'}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -6401,6 +6446,15 @@ snapshots:
 
   '@radix-ui/rect@1.1.1': {}
 
+  '@react-native-async-storage/async-storage@2.2.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))':
+    dependencies:
+      merge-options: 3.0.4
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0)
+
+  '@react-native-community/netinfo@11.4.1(react-native@0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0))':
+    dependencies:
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@18.3.28)(react@19.1.0)
+
   '@react-native/assets-registry@0.81.5': {}
 
   '@react-native/babel-plugin-codegen@0.81.5(@babel/core@7.29.0)':
@@ -6740,7 +6794,24 @@ snapshots:
       tailwindcss: 4.2.4
       vite: 5.4.21(@types/node@20.19.39)(lightningcss@1.32.0)(terser@5.46.2)
 
+  '@tanstack/query-async-storage-persister@5.100.6':
+    dependencies:
+      '@tanstack/query-core': 5.100.6
+      '@tanstack/query-persist-client-core': 5.100.6
+
   '@tanstack/query-core@5.100.5': {}
+
+  '@tanstack/query-core@5.100.6': {}
+
+  '@tanstack/query-persist-client-core@5.100.6':
+    dependencies:
+      '@tanstack/query-core': 5.100.6
+
+  '@tanstack/react-query-persist-client@5.100.6(@tanstack/react-query@5.100.5(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@tanstack/query-persist-client-core': 5.100.6
+      '@tanstack/react-query': 5.100.5(react@19.1.0)
+      react: 19.1.0
 
   '@tanstack/react-query@5.100.5(react@18.3.1)':
     dependencies:
@@ -8031,6 +8102,8 @@ snapshots:
 
   is-number@7.0.0: {}
 
+  is-plain-obj@2.1.0: {}
+
   is-regex@1.2.1:
     dependencies:
       call-bound: 1.0.4
@@ -8306,6 +8379,10 @@ snapshots:
   memoize-one@5.2.1: {}
 
   merge-descriptors@1.0.3: {}
+
+  merge-options@3.0.4:
+    dependencies:
+      is-plain-obj: 2.1.0
 
   merge-stream@2.0.0: {}
 

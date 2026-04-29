@@ -9,10 +9,14 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/netinfo": "11.4.1",
     "@react-navigation/bottom-tabs": "^7.15.10",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/native-stack": "^7.14.12",
+    "@tanstack/query-async-storage-persister": "^5.100.6",
     "@tanstack/react-query": "^5.100.5",
+    "@tanstack/react-query-persist-client": "^5.100.6",
     "axios": "^1.15.2",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
