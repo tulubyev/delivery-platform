@@ -336,8 +336,17 @@ model Client {
   userId         String       @unique @map("user_id")
   companyName    String?      @map("company_name")
   inn            String?
+  kpp            String?
+  ogrn           String?
+  legalAddress   String?      @map("legal_address")
   contractNo     String?      @map("contract_no")
+  contractDate   DateTime?    @map("contract_date")
+  bankName       String?      @map("bank_name")
+  bankBik        String?      @map("bank_bik")
+  bankAccount    String?      @map("bank_account")
+  bankCorAccount String?      @map("bank_cor_account")
   webhookUrl     String?      @map("webhook_url")
+  notes          String?
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
   organization   Organization @relation(fields: [organizationId], references: [id])

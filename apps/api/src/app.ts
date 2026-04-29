@@ -112,7 +112,10 @@ app.get('/api/clients/list',
       const clients = await prisma.client.findMany({
         where: { organizationId: req.user!.organizationId! },
         select: {
-          id: true, companyName: true, inn: true, contractNo: true, createdAt: true,
+          id: true, companyName: true, inn: true, kpp: true, ogrn: true,
+          legalAddress: true, contractNo: true, contractDate: true,
+          bankName: true, bankBik: true, bankAccount: true, bankCorAccount: true,
+          notes: true, webhookUrl: true, createdAt: true,
           user: { select: { name: true, email: true, phone: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -124,9 +127,89 @@ app.get('/api/clients/list',
         phone: c.user.phone,
         companyName: c.companyName,
         inn: c.inn,
+        kpp: c.kpp,
+        ogrn: c.ogrn,
+        legalAddress: c.legalAddress,
         contractNo: c.contractNo,
+        contractDate: c.contractDate,
+        bankName: c.bankName,
+        bankBik: c.bankBik,
+        bankAccount: c.bankAccount,
+        bankCorAccount: c.bankCorAccount,
+        notes: c.notes,
+        webhookUrl: c.webhookUrl,
         createdAt: c.createdAt,
       }))))
+    } catch (e) { next(e) }
+  },
+)
+
+// GET /api/clients/:id — карточка клиента
+app.get('/api/clients/:id',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN'),
+  async (req, res, next) => {
+    try {
+      const client = await prisma.client.findFirst({
+        where: { id: req.params.id, organizationId: req.user!.organizationId! },
+        include: { user: { select: { name: true, email: true, phone: true } } },
+      })
+      if (!client) return res.status(404).json({ success: false, error: 'Клиент не найден' })
+      res.json(ok({ ...client, name: client.user.name, email: client.user.email, phone: client.user.phone }))
+    } catch (e) { next(e) }
+  },
+)
+
+// PATCH /api/clients/:id — редактирование клиента
+app.patch('/api/clients/:id',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN'),
+  async (req, res, next) => {
+    try {
+      const client = await prisma.client.findFirst({
+        where: { id: req.params.id, organizationId: req.user!.organizationId! },
+        include: { user: true },
+      })
+      if (!client) return res.status(404).json({ success: false, error: 'Клиент не найден' })
+
+      const {
+        name, phone, email,
+        companyName, inn, kpp, ogrn, legalAddress,
+        contractNo, contractDate,
+        bankName, bankBik, bankAccount, bankCorAccount,
+        notes, webhookUrl,
+      } = req.body
+
+      // Обновляем User (ФИО, телефон, email)
+      if (name || phone || email) {
+        await prisma.user.update({
+          where: { id: client.userId },
+          data: {
+            ...(name  && { name }),
+            ...(phone && { phone }),
+            ...(email && { email }),
+          },
+        })
+      }
+
+      const updated = await prisma.client.update({
+        where: { id: req.params.id },
+        data: {
+          companyName:    companyName    ?? undefined,
+          inn:            inn            ?? undefined,
+          kpp:            kpp            ?? undefined,
+          ogrn:           ogrn           ?? undefined,
+          legalAddress:   legalAddress   ?? undefined,
+          contractNo:     contractNo     ?? undefined,
+          contractDate:   contractDate   ? new Date(contractDate) : undefined,
+          bankName:       bankName       ?? undefined,
+          bankBik:        bankBik        ?? undefined,
+          bankAccount:    bankAccount    ?? undefined,
+          bankCorAccount: bankCorAccount ?? undefined,
+          notes:          notes          ?? undefined,
+          webhookUrl:     webhookUrl     ?? undefined,
+        },
+        include: { user: { select: { name: true, email: true, phone: true } } },
+      })
+      res.json(ok({ ...updated, name: updated.user.name, email: updated.user.email, phone: updated.user.phone }))
     } catch (e) { next(e) }
   },
 )
