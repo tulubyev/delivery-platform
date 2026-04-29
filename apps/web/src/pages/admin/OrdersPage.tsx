@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, X, UserCheck } from 'lucide-react'
+import { OrderDrawer } from '@/components/admin/OrderDrawer'
 import { useOrders } from '@/queries/orders'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -227,6 +228,7 @@ export function OrdersPage() {
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [assignOrder, setAssignOrder] = useState<OrderRow | null>(null)
+  const [drawerOrderId, setDrawerOrderId] = useState<string | null>(null)
 
   const { data, isLoading } = useOrders({ status, page, limit: 20 })
 
@@ -280,7 +282,8 @@ export function OrdersPage() {
                     const s = STATUS_MAP[o.status]
                     const slaPassed = o.slaDeadlineAt && new Date(o.slaDeadlineAt) < new Date()
                     return (
-                      <tr key={o.id} className="border-b border-slate-50 hover:bg-slate-50">
+                      <tr key={o.id} className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer"
+                        onClick={() => setDrawerOrderId(o.id)}>
                         <td className="px-4 py-3 font-mono font-medium text-blue-600">#{o.number}</td>
                         <td className="px-4 py-3"><Badge variant={s?.variant}>{s?.label ?? o.status}</Badge></td>
                         <td className="px-4 py-3 text-slate-600 max-w-xs truncate">
@@ -292,7 +295,7 @@ export function OrdersPage() {
                             : '—'}
                         </td>
                         <td className="px-4 py-3 text-slate-500">{formatDateTime(o.createdAt)}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                           {o.status === 'CREATED' && (
                             <button onClick={() => setAssignOrder(o as OrderRow)}
                               className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
@@ -325,6 +328,7 @@ export function OrdersPage() {
 
       {showCreate && <CreateOrderModal onClose={() => setShowCreate(false)} />}
       {assignOrder && <AssignModal order={assignOrder} onClose={() => setAssignOrder(null)} />}
+      {drawerOrderId && <OrderDrawer orderId={drawerOrderId} onClose={() => setDrawerOrderId(null)} />}
     </div>
   )
 }

@@ -69,7 +69,7 @@ notificationsRouter.get(
   },
 )
 
-// POST /couriers/:courierId/push — тестовый push курьеру (для отладки)
+// POST /couriers/:courierId/push — push-сообщение курьеру
 notificationsRouter.post(
   '/couriers/:courierId/push',
   authenticate,
@@ -78,6 +78,20 @@ notificationsRouter.post(
     try {
       const { title, body } = z.object({ title: z.string(), body: z.string() }).parse(req.body)
       await notificationService.pushToCourier(req.params.courierId, title, body)
+      res.json(ok({ sent: true }))
+    } catch (e) { next(e) }
+  },
+)
+
+// POST /admin/push — push-сообщение орг-админам и супервизорам организации
+notificationsRouter.post(
+  '/admin/push',
+  authenticate,
+  authorize('ADMIN', 'ORG_ADMIN'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { title, body } = z.object({ title: z.string(), body: z.string() }).parse(req.body)
+      await notificationService.pushAlertToSupervisors(req.user!.organizationId!, title, body)
       res.json(ok({ sent: true }))
     } catch (e) { next(e) }
   },
