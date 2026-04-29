@@ -251,11 +251,11 @@ app.get('/api/superadmin/orders',
     try {
       const page  = Math.max(1, Number(req.query.page) || 1)
       const limit = Math.min(100, Number(req.query.limit) || 20)
-      const orgId = req.query.organizationId as string | undefined
-      const status = req.query.status as string | undefined
-      const where = {
-        ...(orgId   ? { organizationId: orgId } : {}),
-        ...(status  ? { status } : {}),
+      const orgId  = req.query.organizationId as string | undefined
+      const status = req.query.status as import('@prisma/client').OrderStatus | undefined
+      const where: import('@prisma/client').Prisma.OrderWhereInput = {
+        ...(orgId  ? { organizationId: orgId } : {}),
+        ...(status ? { status } : {}),
       }
       const [items, total] = await Promise.all([
         prisma.order.findMany({
