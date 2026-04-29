@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Switch, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
+import { View, Text, Switch, TouchableOpacity, StyleSheet, ScrollView, Alert, StatusBar } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/auth.store'
 import { useCourierStore } from '../store/courier.store'
@@ -12,6 +13,7 @@ interface Order  { id: string; number: string; status: string; deliveryAddress: 
 
 export function HomeScreen() {
   const { user, logout } = useAuthStore()
+  const insets = useSafeAreaInsets()
   const { isOnline, setOnline, activeOrder, setActiveOrder, currentShiftId, setShiftId } = useCourierStore()
   const qc = useQueryClient()
 
@@ -81,7 +83,7 @@ export function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -105,6 +107,7 @@ export function HomeScreen() {
             onValueChange={(v) => {
               if (!v && currentShiftId) endShift.mutate()
               else if (v && activeShift) startShift.mutate(activeShift.id)
+              else setOnline(v)
             }}
             trackColor={{ false: '#e2e8f0', true: '#86efac' }}
             thumbColor={isOnline ? '#16a34a' : '#94a3b8'}
@@ -166,7 +169,7 @@ const styles = StyleSheet.create({
   role:           { fontSize: 13, color: '#64748b' },
   logoutBtn:      { padding: 8 },
   logoutText:     { color: '#ef4444', fontSize: 14 },
-  card:           { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', gap: 6 },
+  card:           { backgroundColor: '#fff', borderRadius: 16, padding: 16, paddingRight: 20, borderWidth: 1, borderColor: '#e2e8f0', gap: 6 },
   activeOrderCard:{ borderColor: '#2563eb', borderWidth: 2 },
   row:            { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle:      { fontSize: 16, fontWeight: '600', color: '#0f172a' },

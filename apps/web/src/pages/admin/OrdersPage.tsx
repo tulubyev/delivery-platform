@@ -49,8 +49,8 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
   const { data: clients } = useQuery<Client[]>({
     queryKey: ['clients-select'],
     queryFn: async () => {
-      const { data } = await api.get('/users', { params: { role: 'CLIENT', limit: 100 } })
-      return (data.data?.items ?? data.data ?? []).map((u: { id: string; name: string }) => ({ id: u.id, name: u.name }))
+      const { data } = await api.get('/clients')
+      return data.data ?? []
     },
   })
 

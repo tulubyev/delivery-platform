@@ -20,6 +20,7 @@ import { WarehousesPage } from '@/pages/admin/WarehousesPage'
 import { PaymentsPage } from '@/pages/admin/PaymentsPage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
+import { ClientsPage } from '@/pages/admin/ClientsPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
 import { AlertsPage } from '@/pages/supervisor/AlertsPage'
 import { SupervisorCouriersPage } from '@/pages/supervisor/CouriersPage'
@@ -50,6 +51,7 @@ export function App() {
               <Route path="/admin/zones"      element={<ZonesPage />} />
               <Route path="/admin/warehouses" element={<WarehousesPage />} />
               <Route path="/admin/payments"   element={<PaymentsPage />} />
+              <Route path="/admin/clients"    element={<ClientsPage />} />
               <Route path="/admin/alerts"     element={<AlertsAdminPage />} />
               <Route path="/admin/settings"   element={<SettingsPage />} />
             </Route>

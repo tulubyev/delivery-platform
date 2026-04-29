@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, Users, Map, Warehouse, Clock, Bell, CreditCard, Settings, LogOut, Truck, ChevronRight, ChevronLeft } from 'lucide-react'
+import { LayoutDashboard, Package, Users, Map, Warehouse, Clock, Bell, CreditCard, Settings, LogOut, Truck, ChevronRight, ChevronLeft, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -11,6 +11,7 @@ const nav = [
   { to: '/admin/shifts',     icon: Clock,            label: 'Смены' },
   { to: '/admin/zones',      icon: Map,              label: 'Зоны' },
   { to: '/admin/warehouses', icon: Warehouse,        label: 'Склады' },
+  { to: '/admin/clients',    icon: Building2,        label: 'Клиенты' },
   { to: '/admin/payments',   icon: CreditCard,       label: 'Платежи' },
   { to: '/admin/alerts',     icon: Bell,             label: 'Алерты' },
   { to: '/admin/settings',   icon: Settings,         label: 'Настройки' },

@@ -85,6 +85,90 @@ app.patch('/api/config',
     } catch (e) { next(e) }
   },
 )
+// GET /api/clients — список клиентов организации (для выпадающего списка при создании заказа)
+app.get('/api/clients',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN', 'SUPERVISOR'),
+  async (req, res, next) => {
+    try {
+      const clients = await prisma.client.findMany({
+        where: { organizationId: req.user!.organizationId! },
+        select: { id: true, companyName: true, user: { select: { name: true, email: true } } },
+        orderBy: { user: { name: 'asc' } },
+      })
+      res.json(ok(clients.map(c => ({
+        id: c.id,
+        name: c.companyName ?? c.user.name,
+        email: c.user.email,
+      }))))
+    } catch (e) { next(e) }
+  },
+)
+
+// GET /api/clients/list — полный список клиентов с деталями (для страницы управления)
+app.get('/api/clients/list',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN'),
+  async (req, res, next) => {
+    try {
+      const clients = await prisma.client.findMany({
+        where: { organizationId: req.user!.organizationId! },
+        select: {
+          id: true, companyName: true, inn: true, contractNo: true, createdAt: true,
+          user: { select: { name: true, email: true, phone: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      res.json(ok(clients.map(c => ({
+        id: c.id,
+        name: c.user.name,
+        email: c.user.email,
+        phone: c.user.phone,
+        companyName: c.companyName,
+        inn: c.inn,
+        contractNo: c.contractNo,
+        createdAt: c.createdAt,
+      }))))
+    } catch (e) { next(e) }
+  },
+)
+
+// POST /api/clients — создание B2B клиента администратором (без OTP)
+app.post('/api/clients',
+  authenticate, authorize('ADMIN', 'ORG_ADMIN'),
+  async (req, res, next) => {
+    try {
+      const { name, email, phone, password, companyName, inn, contractNo } = req.body
+      if (!name || !email || !phone || !password) {
+        return res.status(400).json({ success: false, error: 'name, email, phone и password обязательны' })
+      }
+      const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { phone }] } })
+      if (existing) return res.status(409).json({ success: false, error: 'Email или телефон уже зарегистрированы' })
+
+      const bcrypt = await import('bcryptjs')
+      const passwordHash = await bcrypt.hash(password, 10)
+
+      const user = await prisma.user.create({
+        data: {
+          name, email, phone,
+          passwordHash,
+          role: 'CLIENT',
+          phoneVerified: true,
+          organizationId: req.user!.organizationId!,
+        },
+      })
+      const client = await prisma.client.create({
+        data: {
+          userId: user.id,
+          organizationId: req.user!.organizationId!,
+          companyName: companyName || null,
+          inn: inn || null,
+          contractNo: contractNo || null,
+        },
+      })
+      res.status(201).json(ok({ clientId: client.id, userId: user.id }))
+    } catch (e) { next(e) }
+  },
+)
+
 // GET /api/clients/me — CLIENT получает свой профиль (clientId нужен при создании заказа)
 app.get('/api/clients/me',
   authenticate, authorize('CLIENT'),

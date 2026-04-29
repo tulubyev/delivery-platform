@@ -40,7 +40,7 @@ function CourierTabs() {
 }
 
 export function AppNavigator() {
-  const { token, loadFromStorage } = useAuthStore()
+  const { user, loadFromStorage } = useAuthStore()
   const [offer, setOffer] = useState<PendingOffer | null>(null)
   const notifListener = useRef<Notifications.EventSubscription | null>(null)
 
@@ -66,7 +66,7 @@ export function AppNavigator() {
     <View style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {token ? (
+          {user ? (
             <Stack.Screen name="Main" component={CourierTabs} />
           ) : (
             <Stack.Screen name="Login" component={LoginScreen} />

@@ -2,7 +2,10 @@ import axios from 'axios'
 import * as SecureStore from 'expo-secure-store'
 import Constants from 'expo-constants'
 
-const BASE_URL = Constants.expoConfig?.extra?.apiUrl ?? 'http://localhost:3000/api'
+const BASE_URL =
+  Constants.expoConfig?.extra?.apiUrl ??
+  Constants.manifest?.extra?.apiUrl ??
+  'https://api.lastmiles.ru/api'
 
 export const api = axios.create({
   baseURL: BASE_URL,

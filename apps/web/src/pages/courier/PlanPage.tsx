@@ -60,14 +60,23 @@ export function CourierPlanPage() {
       setMapReady(true)
     }
 
+    const defaultCenter: [number, number] = [37.6176, 55.7558]
+
+    const initByIp = () =>
+      fetch('https://ipapi.co/json/')
+        .then(r => r.json())
+        .then((d: { longitude?: number; latitude?: number }) =>
+          !cancelled && init(d.longitude && d.latitude ? [d.longitude, d.latitude] : defaultCenter))
+        .catch(() => !cancelled && init(defaultCenter))
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         p => !cancelled && init([p.coords.longitude, p.coords.latitude]),
-        () => !cancelled && init([37.6176, 55.7558]),
+        () => initByIp(),
         { timeout: 4000 },
       )
     } else {
-      init([37.6176, 55.7558])
+      initByIp()
     }
 
     return () => {
