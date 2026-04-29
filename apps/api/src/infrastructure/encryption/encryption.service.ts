@@ -7,8 +7,9 @@ const TAG_LEN = 16
 function getKey(): Buffer {
   const raw = process.env.ENCRYPTION_KEY
   if (!raw) throw new Error('ENCRYPTION_KEY не задан')
-  const key = Buffer.from(raw, 'base64')
-  if (key.length !== 32) throw new Error('ENCRYPTION_KEY должен быть 32 байта (base64)')
+  // Accept both hex (64 chars) and base64-encoded 32-byte keys
+  const key = raw.length === 64 ? Buffer.from(raw, 'hex') : Buffer.from(raw, 'base64')
+  if (key.length !== 32) throw new Error('ENCRYPTION_KEY должен быть 32 байта')
   return key
 }
 

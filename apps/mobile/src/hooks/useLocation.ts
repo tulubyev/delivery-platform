@@ -62,9 +62,10 @@ export function useLocationTracking(courierId: string | null, isOnline: boolean)
     }
   }
 
-  function connectWs(courierId: string) {
-    const WS_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'ws://localhost:3000/ws'
-    const token  = '' // Будет подставлен из SecureStore в продакшене
+  async function connectWs(courierId: string) {
+    const WS_URL = process.env.EXPO_PUBLIC_WS_URL ?? 'wss://api.lastmiles.ru/ws'
+    const SecureStore = await import('expo-secure-store')
+    const token = (await SecureStore.getItemAsync('accessToken')) ?? ''
 
     wsRef.current = new WebSocket(`${WS_URL}?token=${token}`)
 

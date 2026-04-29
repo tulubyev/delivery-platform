@@ -22,10 +22,14 @@ async function registerForPush(courierId: string) {
   const { status } = await Notifications.requestPermissionsAsync()
   if (status !== 'granted') return
 
-  const token = await Notifications.getExpoPushTokenAsync({
-    projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-  })
+  let token: Awaited<ReturnType<typeof Notifications.getExpoPushTokenAsync>> | null = null
+  try {
+    token = await Notifications.getExpoPushTokenAsync()
+  } catch {
+    return // Expo Go без projectId не поддерживает push-токены
+  }
 
+  if (!token) return
   // Сохраняем токен в БД — сервер будет слать push через Expo
   try {
     await api.patch(`/couriers/${courierId}/push-token`, { expoPushToken: token.data })
