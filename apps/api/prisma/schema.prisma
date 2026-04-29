@@ -160,6 +160,14 @@ model Organization {
   name                  String
   slug                  String                 @unique
   inn                   String?
+  kpp                   String?
+  ogrn                  String?
+  legalAddress          String?                @map("legal_address")
+  phone                 String?
+  email                 String?
+  website               String?
+  contractNo            String?                @map("contract_no")
+  contractDate          DateTime?              @map("contract_date")
   logoUrl               String?                @map("logo_url")
   isActive              Boolean                @default(true) @map("is_active")
   createdAt             DateTime               @default(now()) @map("created_at")

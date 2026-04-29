@@ -49,7 +49,20 @@ export const organizationService = {
     }
     return prisma.organization.update({
       where: { id },
-      data: dto,
+      data: {
+        ...(dto.name         && { name: dto.name }),
+        ...(dto.slug         && { slug: dto.slug }),
+        ...(dto.inn          !== undefined && { inn: dto.inn }),
+        ...(dto.kpp          !== undefined && { kpp: dto.kpp }),
+        ...(dto.ogrn         !== undefined && { ogrn: dto.ogrn }),
+        ...(dto.legalAddress !== undefined && { legalAddress: dto.legalAddress }),
+        ...(dto.phone        !== undefined && { phone: dto.phone }),
+        ...(dto.email        !== undefined && { email: dto.email }),
+        ...(dto.website      !== undefined && { website: dto.website }),
+        ...(dto.contractNo   !== undefined && { contractNo: dto.contractNo }),
+        ...(dto.contractDate !== undefined && { contractDate: dto.contractDate ? new Date(dto.contractDate) : null }),
+        ...(dto.logoUrl      !== undefined && { logoUrl: dto.logoUrl }),
+      },
       include: { config: true },
     })
   },

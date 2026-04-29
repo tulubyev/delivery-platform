@@ -96,6 +96,18 @@ ordersRouter.patch(
   },
 )
 
+// Редактировать заказ — ORG_ADMIN, ADMIN
+ordersRouter.patch(
+  '/:id',
+  authenticate,
+  authorize('ORG_ADMIN', 'ADMIN'),
+  async (req, res, next) => {
+    try {
+      res.json(ok(await orderService.update(req.params.id, req.user!.organizationId!, req.body)))
+    } catch (e) { next(e) }
+  },
+)
+
 // Отменить заказ — CLIENT, SUPERVISOR, ORG_ADMIN
 ordersRouter.patch(
   '/:id/cancel',

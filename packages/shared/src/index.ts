@@ -36,7 +36,20 @@ export const CreateOrganizationSchema = z.object({
 })
 export type CreateOrganizationDto = z.infer<typeof CreateOrganizationSchema>
 
-export const UpdateOrganizationSchema = CreateOrganizationSchema.partial()
+export const UpdateOrganizationSchema = z.object({
+  name:         z.string().min(2).max(100).optional(),
+  slug:         z.string().regex(/^[a-z0-9-]+$/).optional(),
+  inn:          z.string().regex(/^\d{10}(\d{2})?$/).optional(),
+  kpp:          z.string().optional(),
+  ogrn:         z.string().optional(),
+  legalAddress: z.string().optional(),
+  phone:        z.string().optional(),
+  email:        z.string().email().optional(),
+  website:      z.string().optional(),
+  contractNo:   z.string().optional(),
+  contractDate: z.string().optional(),
+  logoUrl:      z.string().url().optional(),
+})
 export type UpdateOrganizationDto = z.infer<typeof UpdateOrganizationSchema>
 
 export const UpdateTenantConfigSchema = z.object({

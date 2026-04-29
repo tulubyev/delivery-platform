@@ -248,6 +248,47 @@ export const orderService = {
     return this._withDecryptedPii(updated)
   },
 
+  async update(id: string, orgId: string, dto: {
+    notes?: string
+    weight?: number
+    declaredValue?: number
+    paymentOnDelivery?: boolean
+    scheduledAt?: string
+    recipientName?: string
+    recipientPhone?: string
+    pickupAddress?: object
+    deliveryAddress?: object
+  }) {
+    const order = await prisma.order.findFirst({ where: { id, organizationId: orgId } })
+    if (!order) throw new AppError(404, 'Заказ не найден')
+
+    const updateData: Prisma.OrderUpdateInput = {
+      ...(dto.notes          !== undefined && { notes: dto.notes }),
+      ...(dto.weight         !== undefined && { weight: dto.weight }),
+      ...(dto.declaredValue  !== undefined && { declaredValue: dto.declaredValue }),
+      ...(dto.paymentOnDelivery !== undefined && { paymentOnDelivery: dto.paymentOnDelivery }),
+      ...(dto.scheduledAt    !== undefined && { scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null }),
+    }
+
+    // Зашифруем PII если меняются
+    if (dto.recipientName || dto.recipientPhone || dto.deliveryAddress) {
+      const pii = encryptOrderPii({
+        recipientName:   dto.recipientName   ?? order.recipientNameEnc,
+        recipientPhone:  dto.recipientPhone  ?? order.recipientPhoneEnc,
+        deliveryAddress: dto.deliveryAddress ?? (order.deliveryAddress as object),
+      })
+      updateData.recipientNameEnc  = pii.recipientNameEnc
+      updateData.recipientPhoneEnc = pii.recipientPhoneEnc
+      updateData.deliveryAddress   = pii.deliveryAddress
+    }
+    if (dto.pickupAddress) {
+      updateData.pickupAddress = dto.pickupAddress as Prisma.InputJsonValue
+    }
+
+    const updated = await prisma.order.update({ where: { id }, data: updateData })
+    return this._withDecryptedPii(updated)
+  },
+
   async cancel(id: string, orgId: string, actorId: string, comment?: string) {
     const order = await prisma.order.findFirst({ where: { id, organizationId: orgId } })
     if (!order) throw new AppError(404, 'Заказ не найден')

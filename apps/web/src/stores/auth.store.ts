@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface AuthUser { id: string; name: string; email: string; role: string }
+interface AuthUser { id: string; name: string; email: string; role: string; organizationId?: string }
 interface AuthState {
   user: AuthUser | null; accessToken: string | null; refreshToken: string | null
   setAuth: (user: AuthUser, at: string, rt: string) => void
