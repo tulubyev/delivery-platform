@@ -266,7 +266,7 @@ export const orderService = {
       ...(dto.notes          !== undefined && { notes: dto.notes }),
       ...(dto.weight         !== undefined && { weight: dto.weight }),
       ...(dto.declaredValue  !== undefined && { declaredValue: dto.declaredValue }),
-      ...(dto.paymentOnDelivery !== undefined && { paymentOnDelivery: dto.paymentOnDelivery }),
+      ...(dto.paymentOnDelivery !== undefined && { paymentOnDelivery: dto.paymentOnDelivery ? 1 : 0 }),
       ...(dto.scheduledAt    !== undefined && { scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null }),
     }
 
