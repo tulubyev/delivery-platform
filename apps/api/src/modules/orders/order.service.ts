@@ -3,7 +3,7 @@ import { prisma } from '../../infrastructure/db/prisma'
 import { AppError } from '../../middleware/error.middleware'
 import { encryptionService } from '../../infrastructure/encryption/encryption.service'
 import { CreateOrderDto, UpdateOrderStatusDto, OrderFiltersDto } from '@delivery/shared'
-import { redis } from '../../infrastructure/cache/redis'
+import { redis } from '../../infrastructure/redis/redis'
 
 // ── Статусная машина ──────────────────────────────────────────────────────────
 
