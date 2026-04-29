@@ -183,6 +183,44 @@ app.get('/api/clients/me',
   },
 )
 
+// GET /api/superadmin/admins — список ADMIN и ORG_ADMIN
+app.get('/api/superadmin/admins',
+  authenticate, authorize('ADMIN'),
+  async (req, res, next) => {
+    try {
+      const users = await prisma.user.findMany({
+        where: { role: { in: ['ADMIN', 'ORG_ADMIN'] } },
+        select: { id: true, name: true, email: true, role: true, organizationId: true, createdAt: true,
+          organization: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+      })
+      res.json(ok(users))
+    } catch (e) { next(e) }
+  },
+)
+
+// POST /api/superadmin/admins — создание ORG_ADMIN суперадмином
+app.post('/api/superadmin/admins',
+  authenticate, authorize('ADMIN'),
+  async (req, res, next) => {
+    try {
+      const { name, email, phone, password, organizationId } = req.body
+      if (!name || !email || !phone || !password || !organizationId) {
+        return res.status(400).json({ success: false, error: 'Все поля обязательны' })
+      }
+      const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { phone }] } })
+      if (existing) return res.status(409).json({ success: false, error: 'Email или телефон уже зарегистрированы' })
+
+      const bcrypt = await import('bcryptjs')
+      const passwordHash = await bcrypt.hash(password, 10)
+      const user = await prisma.user.create({
+        data: { name, email, phone, passwordHash, role: 'ORG_ADMIN', phoneVerified: true, organizationId },
+      })
+      res.status(201).json(ok({ userId: user.id }))
+    } catch (e) { next(e) }
+  },
+)
+
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
 

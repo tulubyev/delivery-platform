@@ -21,6 +21,9 @@ import { PaymentsPage } from '@/pages/admin/PaymentsPage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
 import { ClientsPage } from '@/pages/admin/ClientsPage'
+import { SuperAdminLayout } from '@/layouts/SuperAdminLayout'
+import { SuperAdminOrgsPage } from '@/pages/superadmin/OrganizationsPage'
+import { SuperAdminUsersPage } from '@/pages/superadmin/AdminUsersPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
 import { AlertsPage } from '@/pages/supervisor/AlertsPage'
 import { SupervisorCouriersPage } from '@/pages/supervisor/CouriersPage'
@@ -40,6 +43,14 @@ export function App() {
         <Routes>
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          {/* SUPERADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route element={<SuperAdminLayout />}>
+              <Route path="/superadmin/organizations" element={<SuperAdminOrgsPage />} />
+              <Route path="/superadmin/admins"        element={<SuperAdminUsersPage />} />
+            </Route>
+          </Route>
 
           {/* ORG_ADMIN / ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ORG_ADMIN']} />}>

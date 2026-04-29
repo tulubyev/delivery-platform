@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, UserCheck } from 'lucide-react'
 import { useOrders } from '@/queries/orders'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -169,10 +169,64 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+interface OrderRow { id: string; number: string; status: string; deliveryAddress: unknown; slaDeadlineAt: string | null; createdAt: string }
+
+function AssignModal({ order, onClose }: { order: OrderRow; onClose: () => void }) {
+  const qc = useQueryClient()
+  const [courierId, setCourierId] = useState('')
+  const [error, setError] = useState('')
+
+  const { data: couriers } = useQuery<{ id: string; user: { name: string } }[]>({
+    queryKey: ['couriers-select'],
+    queryFn: async () => {
+      const { data } = await api.get('/couriers')
+      return data.data?.items ?? data.data ?? []
+    },
+  })
+
+  const assign = useMutation({
+    mutationFn: () => api.post(`/orders/${order.id}/assign`, { courierId }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); onClose() },
+    onError: (e: unknown) => {
+      setError((e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Ошибка назначения')
+    },
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-100">
+          <h2 className="text-lg font-bold text-slate-900">Назначить курьера</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-slate-500">Заказ <span className="font-mono font-medium text-blue-600">#{order.number}</span></p>
+          <div>
+            <Label>Курьер</Label>
+            <select className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={courierId} onChange={e => setCourierId(e.target.value)}>
+              <option value="">Выберите курьера</option>
+              {couriers?.map(c => <option key={c.id} value={c.id}>{c.user?.name ?? c.id}</option>)}
+            </select>
+          </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <div className="flex gap-3 p-6 pt-0">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Отмена</Button>
+          <Button className="flex-1" disabled={!courierId || assign.isPending} onClick={() => assign.mutate()}>
+            {assign.isPending ? 'Назначение...' : 'Назначить'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function OrdersPage() {
   const [status, setStatus] = useState<string | undefined>()
   const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
+  const [assignOrder, setAssignOrder] = useState<OrderRow | null>(null)
 
   const { data, isLoading } = useOrders({ status, page, limit: 20 })
 
@@ -216,7 +270,7 @@ export function OrdersPage() {
               <table className="w-full text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50">
                   <tr>
-                    {['Номер', 'Статус', 'Адрес', 'SLA', 'Создан'].map(h => (
+                    {['Номер', 'Статус', 'Адрес', 'SLA', 'Создан', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-500">{h}</th>
                     ))}
                   </tr>
@@ -226,11 +280,11 @@ export function OrdersPage() {
                     const s = STATUS_MAP[o.status]
                     const slaPassed = o.slaDeadlineAt && new Date(o.slaDeadlineAt) < new Date()
                     return (
-                      <tr key={o.id} className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer">
+                      <tr key={o.id} className="border-b border-slate-50 hover:bg-slate-50">
                         <td className="px-4 py-3 font-mono font-medium text-blue-600">#{o.number}</td>
                         <td className="px-4 py-3"><Badge variant={s?.variant}>{s?.label ?? o.status}</Badge></td>
                         <td className="px-4 py-3 text-slate-600 max-w-xs truncate">
-                          {typeof o.deliveryAddress === 'object' ? Object.values(o.deliveryAddress).filter(Boolean).join(', ') : '—'}
+                          {typeof o.deliveryAddress === 'object' ? Object.values(o.deliveryAddress as Record<string,string>).filter(Boolean).join(', ') : '—'}
                         </td>
                         <td className="px-4 py-3">
                           {o.slaDeadlineAt
@@ -238,11 +292,19 @@ export function OrdersPage() {
                             : '—'}
                         </td>
                         <td className="px-4 py-3 text-slate-500">{formatDateTime(o.createdAt)}</td>
+                        <td className="px-4 py-3">
+                          {o.status === 'CREATED' && (
+                            <button onClick={() => setAssignOrder(o as OrderRow)}
+                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
+                              <UserCheck size={14} />Назначить
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
                   {!data?.items.length && (
-                    <tr><td colSpan={5} className="px-4 py-12 text-center text-slate-400">Заказы не найдены</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400">Заказы не найдены</td></tr>
                   )}
                 </tbody>
               </table>
@@ -262,6 +324,7 @@ export function OrdersPage() {
       </Card>
 
       {showCreate && <CreateOrderModal onClose={() => setShowCreate(false)} />}
+      {assignOrder && <AssignModal order={assignOrder} onClose={() => setAssignOrder(null)} />}
     </div>
   )
 }

@@ -30,15 +30,26 @@ shiftsRouter.post(
 // GET / — список смен с фильтрами
 shiftsRouter.get(
   '/',
-  authenticate, authorize('ADMIN', 'ORG_ADMIN', 'SUPERVISOR'),
+  authenticate, authorize('ADMIN', 'ORG_ADMIN', 'SUPERVISOR', 'COURIER'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const filters = {
-        courierId: req.query.courierId as string | undefined,
-        date:      req.query.date ? new Date(req.query.date as string) : undefined,
-        status:    req.query.status as ShiftStatus | undefined,
+      let courierId = req.query.courierId as string | undefined
+      let orgId = req.user!.organizationId!
+      // Курьер видит только свои смены; organizationId берём из courier-записи
+      if (req.user!.role === 'COURIER') {
+        const courier = await prisma.courier.findUnique({
+          where: { userId: req.user!.sub },
+          select: { id: true, organizationId: true },
+        })
+        courierId = courier?.id
+        orgId = courier?.organizationId ?? orgId
       }
-      res.json(ok(await shiftService.list(req.user!.organizationId!, filters)))
+      const filters = {
+        courierId,
+        date:   req.query.date ? new Date(req.query.date as string) : undefined,
+        status: req.query.status as ShiftStatus | undefined,
+      }
+      res.json(ok(await shiftService.list(orgId, filters)))
     } catch (e) { next(e) }
   },
 )
