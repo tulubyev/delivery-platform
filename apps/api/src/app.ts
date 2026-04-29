@@ -221,6 +221,90 @@ app.post('/api/superadmin/admins',
   },
 )
 
+// GET /api/superadmin/stats — глобальная статистика по всем организациям
+app.get('/api/superadmin/stats',
+  authenticate, authorize('ADMIN'),
+  async (req, res, next) => {
+    try {
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const [totalOrgs, totalUsers, totalOrders, todayOrders, activeOrders, onlineCouriers] = await Promise.all([
+        prisma.organization.count(),
+        prisma.user.count(),
+        prisma.order.count(),
+        prisma.order.count({ where: { createdAt: { gte: today } } }),
+        prisma.order.count({ where: { status: { in: ['CREATED','ASSIGNED','PICKED_UP','IN_TRANSIT'] } } }),
+        prisma.courier.count({ where: { isOnline: true } }),
+      ])
+      const revenueResult = await prisma.order.aggregate({
+        where: { status: 'DELIVERED' },
+        _sum: { declaredValue: true },
+      })
+      res.json(ok({ totalOrgs, totalUsers, totalOrders, todayOrders, activeOrders, onlineCouriers, totalRevenue: revenueResult._sum.declaredValue ?? 0 }))
+    } catch (e) { next(e) }
+  },
+)
+
+// GET /api/superadmin/orders — все заказы всех организаций
+app.get('/api/superadmin/orders',
+  authenticate, authorize('ADMIN'),
+  async (req, res, next) => {
+    try {
+      const page  = Math.max(1, Number(req.query.page) || 1)
+      const limit = Math.min(100, Number(req.query.limit) || 20)
+      const orgId = req.query.organizationId as string | undefined
+      const status = req.query.status as string | undefined
+      const where = {
+        ...(orgId   ? { organizationId: orgId } : {}),
+        ...(status  ? { status } : {}),
+      }
+      const [items, total] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            organization: { select: { name: true } },
+            courier:      { include: { user: { select: { name: true } } } },
+            client:       { select: { companyName: true } },
+          },
+        }),
+        prisma.order.count({ where }),
+      ])
+      res.json(ok({ items, total, page, limit }))
+    } catch (e) { next(e) }
+  },
+)
+
+// GET /api/superadmin/users — все пользователи всех организаций
+app.get('/api/superadmin/users',
+  authenticate, authorize('ADMIN'),
+  async (req, res, next) => {
+    try {
+      const page   = Math.max(1, Number(req.query.page) || 1)
+      const limit  = Math.min(100, Number(req.query.limit) || 30)
+      const role   = req.query.role as string | undefined
+      const search = req.query.search as string | undefined
+      const where = {
+        ...(role   ? { role: role as never } : {}),
+        ...(search ? { OR: [{ name: { contains: search, mode: 'insensitive' as never } }, { email: { contains: search, mode: 'insensitive' as never } }] } : {}),
+      }
+      const [items, total] = await Promise.all([
+        prisma.user.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+          select: { id: true, name: true, email: true, phone: true, role: true, phoneVerified: true, createdAt: true,
+            organization: { select: { name: true } } },
+        }),
+        prisma.user.count({ where }),
+      ])
+      res.json(ok({ items, total, page, limit }))
+    } catch (e) { next(e) }
+  },
+)
+
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 app.use(errorHandler)
 

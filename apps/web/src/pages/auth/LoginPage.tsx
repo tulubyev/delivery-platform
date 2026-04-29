@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 interface LoginForm { email: string; password: string }
 
 const ROLE_REDIRECT: Record<string, string> = {
-  ADMIN: '/superadmin/organizations', ORG_ADMIN: '/admin', SUPERVISOR: '/supervisor', CLIENT: '/client', COURIER: '/courier',
+  ADMIN: '/superadmin', ORG_ADMIN: '/admin', SUPERVISOR: '/supervisor', CLIENT: '/client', COURIER: '/courier',
 }
 
 export function LoginPage() {

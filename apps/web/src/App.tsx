@@ -22,8 +22,13 @@ import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
 import { ClientsPage } from '@/pages/admin/ClientsPage'
 import { SuperAdminLayout } from '@/layouts/SuperAdminLayout'
-import { SuperAdminOrgsPage } from '@/pages/superadmin/OrganizationsPage'
-import { SuperAdminUsersPage } from '@/pages/superadmin/AdminUsersPage'
+import { SuperAdminDashboardPage }  from '@/pages/superadmin/DashboardPage'
+import { SuperAdminOrgsPage }       from '@/pages/superadmin/OrganizationsPage'
+import { SuperAdminUsersPage }      from '@/pages/superadmin/AdminUsersPage'
+import { SuperAdminAllOrdersPage }  from '@/pages/superadmin/AllOrdersPage'
+import { SuperAdminAllUsersPage }   from '@/pages/superadmin/AllUsersPage'
+import { SuperAdminAllCouriersPage } from '@/pages/superadmin/AllCouriersPage'
+import { SuperAdminAllWarehousesPage } from '@/pages/superadmin/AllWarehousesPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
 import { AlertsPage } from '@/pages/supervisor/AlertsPage'
 import { SupervisorCouriersPage } from '@/pages/supervisor/CouriersPage'
@@ -47,8 +52,13 @@ export function App() {
           {/* SUPERADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route element={<SuperAdminLayout />}>
-              <Route path="/superadmin/organizations" element={<SuperAdminOrgsPage />} />
-              <Route path="/superadmin/admins"        element={<SuperAdminUsersPage />} />
+              <Route path="/superadmin"                element={<SuperAdminDashboardPage />} />
+              <Route path="/superadmin/orders"         element={<SuperAdminAllOrdersPage />} />
+              <Route path="/superadmin/couriers"       element={<SuperAdminAllCouriersPage />} />
+              <Route path="/superadmin/warehouses"     element={<SuperAdminAllWarehousesPage />} />
+              <Route path="/superadmin/users"          element={<SuperAdminAllUsersPage />} />
+              <Route path="/superadmin/organizations"  element={<SuperAdminOrgsPage />} />
+              <Route path="/superadmin/admins"         element={<SuperAdminUsersPage />} />
             </Route>
           </Route>
 
