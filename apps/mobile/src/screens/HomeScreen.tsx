@@ -102,16 +102,18 @@ export function HomeScreen() {
             <Text style={styles.cardTitle}>{isOnline ? '🟢 Онлайн' : '⚪ Офлайн'}</Text>
             <Text style={styles.cardSub}>{isOnline ? 'Геолокация передаётся' : 'Начните смену чтобы получать заказы'}</Text>
           </View>
-          <Switch
-            value={isOnline}
-            onValueChange={(v) => {
-              if (!v && currentShiftId) endShift.mutate()
-              else if (v && activeShift) startShift.mutate(activeShift.id)
-              else setOnline(v)
-            }}
-            trackColor={{ false: '#e2e8f0', true: '#86efac' }}
-            thumbColor={isOnline ? '#16a34a' : '#94a3b8'}
-          />
+          <View style={styles.switchWrap}>
+            <Switch
+              value={isOnline}
+              onValueChange={(v) => {
+                if (!v && currentShiftId) endShift.mutate()
+                else if (v && activeShift) startShift.mutate(activeShift.id)
+                else setOnline(v)
+              }}
+              trackColor={{ false: '#e2e8f0', true: '#86efac' }}
+              thumbColor={isOnline ? '#16a34a' : '#94a3b8'}
+            />
+          </View>
         </View>
       </View>
 
@@ -169,7 +171,8 @@ const styles = StyleSheet.create({
   role:           { fontSize: 13, color: '#64748b' },
   logoutBtn:      { padding: 8 },
   logoutText:     { color: '#ef4444', fontSize: 14 },
-  card:           { backgroundColor: '#fff', borderRadius: 16, padding: 16, paddingRight: 20, borderWidth: 1, borderColor: '#e2e8f0', gap: 6 },
+  card:           { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', gap: 6 },
+  switchWrap:     { marginRight: 32 },
   activeOrderCard:{ borderColor: '#2563eb', borderWidth: 2 },
   row:            { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle:      { fontSize: 16, fontWeight: '600', color: '#0f172a' },
