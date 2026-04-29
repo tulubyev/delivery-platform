@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   logoutBtn:      { padding: 8 },
   logoutText:     { color: '#ef4444', fontSize: 14 },
   card:           { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', gap: 6 },
-  switchWrap:     { marginRight: 32 },
+  switchWrap:     { marginRight: 48 },
   activeOrderCard:{ borderColor: '#2563eb', borderWidth: 2 },
   row:            { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle:      { fontSize: 16, fontWeight: '600', color: '#0f172a' },
