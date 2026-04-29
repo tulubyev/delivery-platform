@@ -53,12 +53,20 @@ export const trackingService = {
 
   async getOnlineCouriers(orgId: string) {
     return prisma.courier.findMany({
-      where:  { organizationId: orgId, isOnline: true },
+      where:  { organizationId: orgId },
       select: {
-        id: true, vehicleType: true,
+        id: true, vehicleType: true, isOnline: true,
         currentLat: true, currentLon: true, lastSeenAt: true,
-        user: { select: { name: true } },
+        user: { select: { name: true, phone: true } },
+        orders: {
+          where:  { status: { in: ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT'] } },
+          select: { id: true, number: true, status: true, slaDeadlineAt: true,
+            deliveryAddress: true },
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
       },
+      orderBy: [{ isOnline: 'desc' }, { lastSeenAt: 'desc' }],
     })
   },
 

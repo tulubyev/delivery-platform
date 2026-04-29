@@ -3,6 +3,7 @@ import { prisma } from '../../infrastructure/db/prisma'
 import { AppError } from '../../middleware/error.middleware'
 import { encryptionService } from '../../infrastructure/encryption/encryption.service'
 import { CreateOrderDto, UpdateOrderStatusDto, OrderFiltersDto } from '@delivery/shared'
+import { redis } from '../../infrastructure/cache/redis'
 
 // ── Статусная машина ──────────────────────────────────────────────────────────
 
@@ -217,14 +218,16 @@ export const orderService = {
   },
 
   async assign(id: string, orgId: string, courierId: string, actorId: string) {
-    const order = await prisma.order.findFirst({ where: { id, organizationId: orgId } })
+    // Находим заказ — если orgId не задан (ADMIN без орг), ищем только по id
+    const orderWhere = orgId ? { id, organizationId: orgId } : { id }
+    const order = await prisma.order.findFirst({ where: orderWhere })
     if (!order) throw new AppError(404, 'Заказ не найден')
     assertTransition(order.status, OrderStatus.ASSIGNED)
 
-    const courier = await prisma.courier.findFirst({
-      where: { id: courierId, organizationId: orgId, verifiedAt: { not: null } },
-    })
-    if (!courier) throw new AppError(404, 'Верифицированный курьер не найден')
+    // Находим курьера без требования verifiedAt
+    const courierWhere = orgId ? { id: courierId, organizationId: orgId } : { id: courierId }
+    const courier = await prisma.courier.findFirst({ where: courierWhere })
+    if (!courier) throw new AppError(404, 'Курьер не найден')
 
     const [updated] = await prisma.$transaction([
       prisma.order.update({ where: { id }, data: { courierId, status: OrderStatus.ASSIGNED } }),
@@ -232,6 +235,15 @@ export const orderService = {
         data: { orderId: id, status: OrderStatus.ASSIGNED, createdBy: actorId },
       }),
     ])
+
+    // Публикуем событие в WS-канал организации для супервизора
+    const notifyOrgId = order.organizationId
+    if (notifyOrgId) {
+      await redis.publish(`org:${notifyOrgId}`, JSON.stringify({
+        type: 'ORDER_ASSIGNED',
+        payload: { orderId: id, courierId, orderNumber: order.number },
+      }))
+    }
 
     return this._withDecryptedPii(updated)
   },
