@@ -21,12 +21,12 @@ import { PaymentsPage } from '@/pages/admin/PaymentsPage'
 import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { AlertsAdminPage } from '@/pages/admin/AlertsAdminPage'
 import { ClientsPage } from '@/pages/admin/ClientsPage'
+import { UsersPage } from '@/pages/shared/UsersPage'
 import { SuperAdminLayout } from '@/layouts/SuperAdminLayout'
 import { SuperAdminDashboardPage }  from '@/pages/superadmin/DashboardPage'
 import { SuperAdminOrgsPage }       from '@/pages/superadmin/OrganizationsPage'
 import { SuperAdminUsersPage }      from '@/pages/superadmin/AdminUsersPage'
 import { SuperAdminAllOrdersPage }  from '@/pages/superadmin/AllOrdersPage'
-import { SuperAdminAllUsersPage }   from '@/pages/superadmin/AllUsersPage'
 import { SuperAdminAllCouriersPage } from '@/pages/superadmin/AllCouriersPage'
 import { SuperAdminAllWarehousesPage } from '@/pages/superadmin/AllWarehousesPage'
 import { MapPage } from '@/pages/supervisor/MapPage'
@@ -56,7 +56,7 @@ export function App() {
               <Route path="/superadmin/orders"         element={<SuperAdminAllOrdersPage />} />
               <Route path="/superadmin/couriers"       element={<SuperAdminAllCouriersPage />} />
               <Route path="/superadmin/warehouses"     element={<SuperAdminAllWarehousesPage />} />
-              <Route path="/superadmin/users"          element={<SuperAdminAllUsersPage />} />
+              <Route path="/superadmin/users"          element={<UsersPage />} />
               <Route path="/superadmin/organizations"  element={<SuperAdminOrgsPage />} />
               <Route path="/superadmin/admins"         element={<SuperAdminUsersPage />} />
             </Route>
@@ -73,6 +73,7 @@ export function App() {
               <Route path="/admin/warehouses" element={<WarehousesPage />} />
               <Route path="/admin/payments"   element={<PaymentsPage />} />
               <Route path="/admin/clients"    element={<ClientsPage />} />
+              <Route path="/admin/users"      element={<UsersPage />} />
               <Route path="/admin/alerts"     element={<AlertsAdminPage />} />
               <Route path="/admin/settings"   element={<SettingsPage />} />
             </Route>

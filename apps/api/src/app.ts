@@ -7,6 +7,7 @@ import http from 'http'
 import { WebSocketServer } from 'ws'
 import { errorHandler } from './middleware/error.middleware'
 import { authRouter } from './modules/users/auth.controller'
+import { usersRouter } from './modules/users/user.controller'
 import { ordersRouter } from './modules/orders/order.controller'
 import { trackingRouter } from './modules/tracking/tracking.controller'
 import { publicTrackingRouter } from './modules/tracking/public-tracking.controller'
@@ -51,6 +52,7 @@ app.use(express.json())
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 
 app.use('/api/auth',          authRouter)
+app.use('/api/users',         usersRouter)
 app.use('/api/orders',        ordersRouter)
 app.use('/api/tracking',      trackingRouter)
 app.use('/api/payouts',       payoutsRouter)

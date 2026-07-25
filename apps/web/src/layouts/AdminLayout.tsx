@@ -12,6 +12,7 @@ const nav = [
   { to: '/admin/zones',      icon: Map,              label: 'Зоны' },
   { to: '/admin/warehouses', icon: Warehouse,        label: 'Склады' },
   { to: '/admin/clients',    icon: Building2,        label: 'Клиенты' },
+  { to: '/admin/users',      icon: Users,            label: 'Пользователи' },
   { to: '/admin/payments',   icon: CreditCard,       label: 'Платежи' },
   { to: '/admin/alerts',     icon: Bell,             label: 'Алерты' },
   { to: '/admin/settings',   icon: Settings,         label: 'Настройки' },
