@@ -64,12 +64,18 @@ export const authService = {
       })
     }
 
-    // Отправляем OTP по SMS
+    // Отправляем OTP по SMS. Не блокируем регистрацию при сбое, но логируем причину:
+    // smsruClient.send при ошибке возвращает { status: 'ERROR' } (не бросает исключение),
+    // поэтому проверяем результат явно, а не только через .catch().
     const smsText = `Ваш код подтверждения LastMiles: ${otp}. Действителен 10 минут.`
-    await smsruClient.send(dto.phone, smsText).catch(() => {
-      // Не блокируем регистрацию при ошибке SMS (логируем только)
-      console.error('[auth] SMS send failed for', dto.phone)
-    })
+    try {
+      const smsResult = await smsruClient.send(dto.phone, smsText)
+      if (smsResult.status !== 'OK') {
+        console.error('[auth] SMS send rejected for', dto.phone, '-', smsResult.status_code, smsResult.status_text)
+      }
+    } catch (err) {
+      console.error('[auth] SMS send failed for', dto.phone, '-', (err as Error).message)
+    }
 
     return {
       message:   'Регистрация успешна. Введите код из SMS для подтверждения телефона.',
@@ -132,7 +138,19 @@ export const authService = {
       data:  { phoneOtp: otp, phoneOtpExpiresAt: otpExpires },
     })
 
-    await smsruClient.send(user.phone, `Ваш код LastMiles: ${otp}. Действителен 10 минут.`)
+    // Отправка по явному запросу пользователя — при сбое сообщаем об ошибке,
+    // а не возвращаем ложное «Код отправлен». send() не бросает, поэтому проверяем результат.
+    let smsResult
+    try {
+      smsResult = await smsruClient.send(user.phone, `Ваш код LastMiles: ${otp}. Действителен 10 минут.`)
+    } catch (err) {
+      console.error('[auth] SMS resend failed for', user.phone, '-', (err as Error).message)
+      throw new AppError(502, 'Не удалось отправить SMS. Попробуйте позже.')
+    }
+    if (smsResult.status !== 'OK') {
+      console.error('[auth] SMS resend rejected for', user.phone, '-', smsResult.status_code, smsResult.status_text)
+      throw new AppError(502, 'Не удалось отправить SMS. Попробуйте позже.')
+    }
 
     return { message: 'Код отправлен повторно' }
   },

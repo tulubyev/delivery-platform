@@ -10,13 +10,12 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
-    ports:
-      - "127.0.0.1:3100:3000"
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - internal
+      - traefik-public
     volumes:
       - uploads:/app/uploads
     healthcheck:
@@ -45,6 +44,9 @@ services:
 networks:
   internal:
     driver: bridge
+  # Внешняя сеть traefik — маршрут api.lastmiles.ru → delivery-api:3000
+  traefik-public:
+    external: true
 
 volumes:
   redis_data:
