@@ -11,7 +11,7 @@ export type VehicleType = z.infer<typeof VehicleType>
 export const VerificationStatus = z.enum(['UNSUBMITTED', 'PENDING', 'APPROVED', 'REJECTED'])
 export type VerificationStatus = z.infer<typeof VerificationStatus>
 
-export const LoginSchema = z.object({ email: z.string().email(), password: z.string().min(8) })
+export const LoginSchema = z.object({ email: z.string().email(), password: z.string().min(8), captchaToken: z.string().optional() })
 export type LoginDto = z.infer<typeof LoginSchema>
 
 export const RegisterSchema = z.object({

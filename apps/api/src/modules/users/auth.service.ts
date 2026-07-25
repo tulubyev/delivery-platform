@@ -5,6 +5,7 @@ import { AppError } from '../../middleware/error.middleware'
 import { LoginDto, RegisterDto } from '@delivery/shared'
 import { UserRole } from '@prisma/client'
 import { smsruClient } from '../../infrastructure/notifications/smsru.client'
+import { verifyCaptcha, captchaEnabled } from '../../infrastructure/captcha/aptogon.client'
 
 const JWT_SECRET     = process.env.JWT_SECRET!
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET!
@@ -157,6 +158,12 @@ export const authService = {
 
   // ── Вход ────────────────────────────────────────────────────────────────────
   async login(dto: LoginDto) {
+    // Гейт капчи — до проверки логина/пароля, чтобы боты не перебирали учётки
+    if (captchaEnabled()) {
+      const check = await verifyCaptcha(dto.captchaToken)
+      if (!check.ok) throw new AppError(400, 'Проверка «я не робот» не пройдена. Обновите страницу и попробуйте снова.')
+    }
+
     const user = await prisma.user.findUnique({ where: { email: dto.email } })
     if (!user || !user.isActive) throw new AppError(401, 'Неверный email или пароль')
     if (!(await bcrypt.compare(dto.password, user.passwordHash))) throw new AppError(401, 'Неверный email или пароль')

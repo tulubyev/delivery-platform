@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { AptogonCaptcha } from '@/components/shared/AptogonCaptcha'
 
 interface LoginForm { email: string; password: string }
 
@@ -20,17 +21,23 @@ export function LoginPage() {
   const { setAuth } = useAuthStore()
   const [error, setError]           = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaKey, setCaptchaKey]     = useState(0) // смена ключа = перемонтировать капчу (сброс)
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<LoginForm>()
 
   const onSubmit = async (form: LoginForm) => {
     setError('')
+    if (!captchaToken) { setError('Подтвердите, что вы не робот'); return }
     try {
-      const { data } = await api.post('/auth/login', form)
+      const { data } = await api.post('/auth/login', { ...form, captchaToken })
       const { accessToken, refreshToken, user } = data.data
       setAuth(user, accessToken, refreshToken)
       navigate(ROLE_REDIRECT[user.role] ?? '/admin')
     } catch (e: unknown) {
       setError((e as { response?: { data?: { error?: string } } }).response?.data?.error ?? 'Ошибка входа')
+      // Токен капчи одноразовый — сбрасываем и перерисовываем виджет для повторной попытки
+      setCaptchaToken('')
+      setCaptchaKey(k => k + 1)
     }
   }
 
@@ -82,8 +89,13 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
+              <AptogonCaptcha
+                key={captchaKey}
+                onVerified={setCaptchaToken}
+                onError={() => setError('Капча недоступна, попробуйте позже')}
+              />
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || !captchaToken}>
                 {isSubmitting ? 'Вход...' : 'Войти'}
               </Button>
             </form>
