@@ -39,7 +39,7 @@ fi
 # ── .env ──────────────────────────────────────────────────────────────────
 if [ ! -f ".env" ]; then
     cp .env.example .env 2>/dev/null || cat > .env << 'ENVEOF'
-DATABASE_URL=postgres://delivery:CHANGE_ME@62.217.178.173/delivery_db
+DATABASE_URL=postgres://delivery:CHANGE_ME@90.156.168.149/delivery_db
 REDIS_URL=redis://redis:6379
 JWT_SECRET=CHANGE_ME_LONG_RANDOM_SECRET_32CHARS
 JWT_REFRESH_SECRET=CHANGE_ME_ANOTHER_LONG_SECRET_32CHARS

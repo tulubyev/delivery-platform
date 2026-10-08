@@ -97,7 +97,7 @@
 | Контейнеризация | Docker + docker-compose |
 | Reverse proxy | Nginx |
 | CI/CD | GitHub Actions |
-| VPS | Ubuntu 24.04 (62.217.178.173) |
+| VPS | Ubuntu 24.04 (90.156.168.149) |
 | DB | PostgreSQL 16 (на VPS) |
 | Cache | Redis 7 (на VPS) |
 
