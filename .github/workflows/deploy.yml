@@ -27,6 +27,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
+      # --ignore-scripts skips Prisma's postinstall and nothing builds the
+      # workspace package, so both have to happen before tsc can see them.
+      - name: Build @delivery/shared
+        run: pnpm --filter @delivery/shared build
+
+      - name: Generate Prisma client
+        run: pnpm --filter api exec prisma generate
+
       - name: Type-check API
         run: pnpm --filter api exec tsc --noEmit
 
