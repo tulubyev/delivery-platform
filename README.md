@@ -2,7 +2,7 @@
 
 **Стек:** Node.js 20 · TypeScript · Express · Prisma 5 · PostgreSQL · Redis · BullMQ · WebSocket · React + Vite · Expo (React Native) · pnpm монорепо · Docker
 
-**Продакшн:** https://lastmiles.ru · API: https://api.lastmiles.ru · VPS: 62.217.178.173
+**Продакшн:** https://lastmiles.ru · API: https://api.lastmiles.ru · VPS: 90.156.168.149
 
 ---
 
@@ -170,7 +170,7 @@ WS   wss://api.lastmiles.ru/ws?token=<JWT>
 ## Инфраструктура (VPS)
 
 ```
-62.217.178.173 (Beget VPS)
+90.156.168.149 (Beget VPS)
 ├── nginx (системный)
 │   ├── lastmiles.ru → /var/www/lastmiles/apps/web/dist  (React SPA)
 │   └── api.lastmiles.ru → 127.0.0.1:3100                (Docker API)
