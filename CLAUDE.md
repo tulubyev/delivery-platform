@@ -8,7 +8,7 @@
 |---|---|
 | GitHub | https://github.com/tulubyev/delivery-platform |
 | Локально | `~/Dropbox/DEV/Delivery` |
-| VPS | `/opt/delivery-platform` (90.156.168.149) |
+| VPS | `/var/www/lastmiles` (90.156.168.149) |
 | Прод | lastmiles.ru |
 | Стек | pnpm-монорепо — Express + Prisma + BullMQ, React/Vite, Expo |
 
