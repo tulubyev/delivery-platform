@@ -8,7 +8,7 @@
 |---|---|
 | GitHub | https://github.com/tulubyev/delivery-platform |
 | Локально | `~/Dropbox/DEV/Delivery` |
-| VPS | `/opt/delivery-platform` (90.156.168.149) |
+| VPS | `/var/www/lastmiles` (90.156.168.149) |
 | Прод | lastmiles.ru |
 | Стек | pnpm-монорепо — Express + Prisma + BullMQ, React/Vite, Expo |
 
@@ -28,4 +28,41 @@
 
 ## Команды
 
-<!-- заполнить: установка, запуск, сборка, тесты, деплой -->
+Установка и локальный запуск (нужен `.env` по образцу `.env.example`):
+
+```bash
+pnpm install
+pnpm --filter @delivery/shared build      # shared собирается первым, иначе tsc не видит @delivery/shared
+pnpm --filter api exec prisma generate    # после установки и после правок schema.prisma
+pnpm dev:api                              # API
+pnpm dev:web                              # web (Vite)
+```
+
+Проверка типов (тестов в проекте нет, `lint` = `tsc --noEmit`):
+
+```bash
+pnpm lint
+```
+
+База данных:
+
+```bash
+pnpm db:migrate                           # dev-миграции
+pnpm --filter api db:migrate:prod         # prisma migrate deploy (на проде делает контейнер сам)
+pnpm --filter api db:seed                 # сид
+```
+
+Деплой на VPS (`/var/www/lastmiles`, пользователь с sudo):
+
+```bash
+cd /var/www/lastmiles && sudo git pull --ff-only origin main
+sudo docker compose up -d --build api                                  # API: пересборка и пересоздание контейнера
+sudo pnpm --filter @delivery/shared build && sudo pnpm --filter web build   # фронт: dist раздаёт nginx, рестарт не нужен
+```
+
+Заметки по инфраструктуре:
+
+- Фронт: nginx на хосте, `root /var/www/lastmiles/apps/web/dist`, порт 8080. Перед ним Traefik.
+- API: контейнер `delivery-api` в сети `traefik-public`. Traefik маршрутизирует `api.lastmiles.ru` на `http://delivery-api:3000` (конфиг в репозитории `vps-server-infra`, файл `traefik/dynamic.yml`).
+- Миграции применяются автоматически: при старте контейнер API выполняет `prisma migrate deploy`, затем `node dist/app.js`. Если миграция падает, ошибка уходит в лог контейнера, а API всё равно стартует.
+- Вход защищён капчей Aptogon: нужен `APTOGON_SECRET_KEY` в `.env`, отключить можно `CAPTCHA_ENABLED=false`.
