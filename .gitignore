@@ -18,3 +18,4 @@ prisma/migrations/dev/
 .pnpm-store/
 certbot_certs/
 certbot_webroot/
+*.tar.gz
