@@ -12,3 +12,10 @@ coverage/
 *.key
 prisma/migrations/dev/
 
+
+# Server-side artifacts
+.env.bak*
+.pnpm-store/
+certbot_certs/
+certbot_webroot/
+*.tar.gz
