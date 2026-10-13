@@ -63,6 +63,7 @@ sudo pnpm --filter @delivery/shared build && sudo pnpm --filter web build   # ф
 Заметки по инфраструктуре:
 
 - Фронт: nginx на хосте, `root /var/www/lastmiles/apps/web/dist`, порт 8080. Перед ним Traefik.
-- API: контейнер `delivery-api` в сети `traefik-public`. Traefik маршрутизирует `api.lastmiles.ru` на `http://delivery-api:3000` (конфиг в репозитории `vps-server-infra`, файл `traefik/dynamic.yml`).
+- API: контейнер `delivery-api` в сети `traefik-public`. Маршрут `api.lastmiles.ru` задан Docker labels в `docker-compose.yml` (стандарт `vps-server-infra`, `docs/NEW-PROJECT.md`, Вариант A) и пока дублируется файловым маршрутом `lastmiles-api` в `traefik/dynamic.yml` репозитория `vps-server-infra` (на `http://delivery-api:3000`). Дубль нужно убрать после проверки labels. Порт на хосте не публикуется.
+- CI (`.github/workflows`): `ci.yml` — проверка типов и пробная сборка Docker-образов API и web (без публикации) на каждый PR и push в `main`; `mobile-eas.yml` — сборка APK через EAS только при изменениях в `apps/mobile` или вручную. Автодеплоя нет: выкатка делается вручную по шагам выше.
 - Миграции применяются автоматически: при старте контейнер API выполняет `prisma migrate deploy`, затем `node dist/app.js`. Если миграция падает, ошибка уходит в лог контейнера, а API всё равно стартует.
 - Вход защищён капчей Aptogon: нужен `APTOGON_SECRET_KEY` в `.env`, отключить можно `CAPTCHA_ENABLED=false`.

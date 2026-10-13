@@ -1,0 +1,40 @@
+# Сборка preview-APK мобильного приложения через EAS.
+# Запускается только при изменениях в apps/mobile (каждая сборка расходует
+# лимит EAS Build) или вручную из вкладки Actions.
+name: Mobile / EAS Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-eas.yml"
+  workflow_dispatch:
+
+jobs:
+  eas-build:
+    name: EAS Build (preview APK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # eas-cli 24+ требует Node >= 22 (с Node 20 `yarn add eas-cli` падает на
+      # проверке engines у @oclif/plugin-autocomplete). Остальные джобы остаются на Node 20.
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+
+      - uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install mobile deps
+        working-directory: apps/mobile
+        run: npm install
+
+      - name: EAS Build (Android preview APK)
+        working-directory: apps/mobile
+        run: eas build --platform android --profile preview --non-interactive
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.VITE_API_URL }}
