@@ -1,14 +1,13 @@
-# Сборка preview-APK мобильного приложения через EAS.
-# Запускается только при изменениях в apps/mobile (каждая сборка расходует
-# лимит EAS Build) или вручную из вкладки Actions.
+# Сборка preview-APK мобильного приложения (apps/mobile) через EAS.
+# Только ручной запуск (вкладка Actions → Run workflow): мобильное приложение пока
+# не в работе, а каждая сборка расходует лимит EAS Build.
+# Перед первым запуском нужно: создать проект в Expo (`eas init`, заменить
+# YOUR_EAS_PROJECT_ID в apps/mobile/app.json), проверить секрет EXPO_TOKEN и
+# настроить подпись Android. Автозапуск по изменениям в apps/mobile можно вернуть
+# добавлением `push` с `paths: ["apps/mobile/**"]` в блок `on`.
 name: Mobile / EAS Build
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/mobile/**"
-      - ".github/workflows/mobile-eas.yml"
   workflow_dispatch:
 
 # EAS-токен лежит в секрете EXPO_TOKEN, GITHUB_TOKEN этому job достаточно только читать.
