@@ -64,5 +64,6 @@ sudo pnpm --filter @delivery/shared build && sudo pnpm --filter web build   # ф
 
 - Фронт: nginx на хосте, `root /var/www/lastmiles/apps/web/dist`, порт 8080. Перед ним Traefik.
 - API: контейнер `delivery-api` в сети `traefik-public`. Traefik маршрутизирует `api.lastmiles.ru` на `http://delivery-api:3000` (конфиг в репозитории `vps-server-infra`, файл `traefik/dynamic.yml`).
-- Миграции применяются автоматически: при старте контейнер API выполняет `prisma migrate deploy`, затем `node dist/app.js`. Если миграция падает, ошибка уходит в лог контейнера, а API всё равно стартует.
+- Миграции применяются автоматически: при старте контейнер API выполняет `prisma migrate deploy` и только потом `node dist/app.js`. Если миграция падает, контейнер не стартует (restart-loop), причина в `docker logs delivery-api`.
+- Миграции начинаются с `20260101_baseline` (схема до первых ALTER-миграций, раньше её создавали через `db push`). На БД, где схема уже есть (прод), baseline один раз помечается применённым: `prisma migrate resolve --applied 20260101_baseline`, и только после этого запускается контейнер с новым образом. На пустой БД всё накатывается само.
 - Вход защищён капчей Aptogon: нужен `APTOGON_SECRET_KEY` в `.env`, отключить можно `CAPTCHA_ENABLED=false`.
