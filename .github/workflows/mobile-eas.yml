@@ -11,6 +11,10 @@ on:
       - ".github/workflows/mobile-eas.yml"
   workflow_dispatch:
 
+# EAS-токен лежит в секрете EXPO_TOKEN, GITHUB_TOKEN этому job достаточно только читать.
+permissions:
+  contents: read
+
 jobs:
   eas-build:
     name: EAS Build (preview APK)
@@ -23,10 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
 
-      - uses: expo/expo-github-action@v8
+      # Сторонний action закреплён на полный SHA (тег v8 = 8.2.1), версия eas-cli зафиксирована.
+      # expo-cli не нужен: сборка идёт только через eas-cli.
+      - uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e # v8.2.1
         with:
-          expo-version: latest
-          eas-version: latest
+          eas-version: 24.12.1
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install mobile deps

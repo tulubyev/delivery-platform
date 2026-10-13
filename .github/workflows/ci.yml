@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 # Деплоя в этом workflow нет намеренно: на VPS он делается вручную (см. CLAUDE.md,
 # раздел «Команды»): `git pull`, `docker compose up -d --build api`, сборка фронта.
 # Прежний job «Deploy to VPS» ходил в /opt/delivery-platform, сервис nginx и
