@@ -13,9 +13,22 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    expose:
+      - "3000"
     networks:
       - internal
       - traefik-public
+    # Маршрут через Docker labels, как принято в vps-server-infra для Docker-проектов
+    # (docs/NEW-PROJECT.md, Вариант A). Пока в traefik/dynamic.yml есть такой же маршрут
+    # lastmiles-api@file, оба ведут на этот контейнер; после проверки файловый
+    # маршрут и lastmiles-api-svc из dynamic.yml нужно удалить.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.lastmiles-api.rule=Host(`api.lastmiles.ru`)"
+      - "traefik.http.routers.lastmiles-api.entrypoints=websecure"
+      - "traefik.http.routers.lastmiles-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lastmiles-api.loadbalancer.server.port=3000"
     volumes:
       - uploads:/app/uploads
     healthcheck:

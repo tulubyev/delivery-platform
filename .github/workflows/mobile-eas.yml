@@ -1,0 +1,44 @@
+# Сборка preview-APK мобильного приложения (apps/mobile) через EAS.
+# Только ручной запуск (вкладка Actions → Run workflow): мобильное приложение пока
+# не в работе, а каждая сборка расходует лимит EAS Build.
+# Перед первым запуском нужно: создать проект в Expo (`eas init`, заменить
+# YOUR_EAS_PROJECT_ID в apps/mobile/app.json), проверить секрет EXPO_TOKEN и
+# настроить подпись Android. Автозапуск по изменениям в apps/mobile можно вернуть
+# добавлением `push` с `paths: ["apps/mobile/**"]` в блок `on`.
+name: Mobile / EAS Build
+
+on:
+  workflow_dispatch:
+
+# EAS-токен лежит в секрете EXPO_TOKEN, GITHUB_TOKEN этому job достаточно только читать.
+permissions:
+  contents: read
+
+jobs:
+  eas-build:
+    name: EAS Build (preview APK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # eas-cli 24+ требует Node >= 22 (с Node 20 `yarn add eas-cli` падает на
+      # проверке engines у @oclif/plugin-autocomplete). Остальные джобы остаются на Node 20.
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+
+      # Сторонний action закреплён на полный SHA (тег v8 = 8.2.1), версия eas-cli зафиксирована.
+      # expo-cli не нужен: сборка идёт только через eas-cli.
+      - uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e # v8.2.1
+        with:
+          eas-version: 24.12.1
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install mobile deps
+        working-directory: apps/mobile
+        run: npm install
+
+      - name: EAS Build (Android preview APK)
+        working-directory: apps/mobile
+        run: eas build --platform android --profile preview --non-interactive
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.VITE_API_URL }}
